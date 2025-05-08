@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Employee Attendance List</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style-emp-atten-list.css' %}">  
+</head>
+<body>
+<div class="container">
+    <h2 class="heading">Employee Attendance Records</h2>
+    
+    <form method="get" class="filter-container">
+        <div class="input-group">
+            <input type="text" name="search" class="form-control" placeholder="Search for employees..." value="{{ search_query }}">
+            <div class="input-group-append">
+                <button class="btn btn-custom" type="submit"><i class="fas fa-search"></i> Search</button>
+            </div>
+        </div>
+        <div class="input-group">
+            <input type="date" name="attendance_date" class="form-control" value="{{ date_filter }}">
+            <div class="input-group-append">
+                <button class="btn btn-custom" type="submit"><i class="fas fa-calendar-alt"></i> Filter</button>
+            </div>
+        </div>
+        <div class="input-group">
+            <a href="?download_report=true&search={{ search_query }}&attendance_date={{ date_filter }}" class="btn btn-custom">
+                <i class="fas fa-download"></i> Download Report
+            </a>
+        </div>
+    </form>
+    
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover">
+            <thead>
+                <tr>
+                    <th>Emp Image</th>
+                    <th>Emp Name</th>
+                    <th>Emp ID</th>
+                    <th>Department</th>
+                    <th>Position</th>
+                    <th>Attendance Date</th>
+                    <th>Check-in Time</th>
+                    <th>Check-out Time</th>
+                    <th>Stayed Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for attendance in attendance_records %}
+                <tr>
+                    <td>
+                        {% if attendance.employee.profile_picture %}
+                            <img src="{{ attendance.employee.profile_picture.url }}" alt="{{ attendance.employee.first_name }}" class="employee-image">
+                        {% else %}
+                            <div class="text-muted">No Image</div>
+                        {% endif %}
+                    </td>
+                    <td>{{ attendance.employee.first_name }} {{ attendance.employee.last_name }}</td>
+                    <td>{{ attendance.employee.employee_id }}</td>
+                    <td>{{ attendance.employee.department.name }}</td>
+                    <td>{{ attendance.employee.position }}</td>
+                    <td>{{ attendance.date }}</td>
+                    <td>
+                        {% if attendance.check_in_time %}
+                            {{ attendance.check_in_time|date:"h:i:s A" }}
+                        {% else %}
+                            <span class="text-warning">Not Checked In</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if attendance.check_out_time %}
+                            {{ attendance.check_out_time|date:"h:i:s A" }}
+                        {% else %}
+                            <span class="text-warning">Not Checked Out</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if attendance.check_in_time and attendance.check_out_time %}
+                            {{ attendance.calculate_duration }}
+                        {% else %}
+                            <span class="text-warning">Incomplete</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="text-center">No attendance records found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+<div class="footer" onclick="location.href='{% url 'face_attendance:index' %}'" style="cursor: pointer;">
+    <i class="fas fa-home back-icon"></i> Back to Home
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

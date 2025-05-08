@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Face | Face Attendance System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style-register-face.css' %}">  
+</head>
+<body>
+    <div class="container">
+        {% if messages %}
+        <div class="alert alert-info">
+            {% for message in messages %}
+                <p>{{ message }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Register Face</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3 text-center">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="registerType" id="existingEmployee" value="existing" checked>
+                                <label class="form-check-label" for="existingEmployee">Existing Employee</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="registerType" id="newEmployee" value="new">
+                                <label class="form-check-label" for="newEmployee">New Employee</label>
+                            </div>
+                        </div>
+                        
+                        <!-- Existing Employee Selection -->
+                        <div id="existingEmployeeSection">
+                            <div class="mb-3">
+                                <label for="employee_id" class="form-label">Select Employee</label>
+                                <select class="form-select" id="employee_id" name="employee_id" required>
+                                    <option value="">Select Employee</option>
+                                    {% for employee in employee %}
+                                        <option value="{{ employee.id }}">{{ employee.first_name }} {{ employee.last_name }} ({{ employee.employee_id }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- New Employee Form -->
+                        <div id="newEmployeeSection" style="display: none;">
+                            <form id="employeeForm">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="employee_id_new" class="form-label">Employee ID</label>
+                                        <input type="text" class="form-control" id="employee_id_new" name="employee_id_new" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                                <label for="department" class="form-label">Department</label>
+                                                <select class="form-select" id="department" name="department" required>
+                                                    <option value="">Select Department</option>
+                                                    <option value="1">Human Resources</option>
+                                                    <option value="2">Information Technology</option>
+                                                    <option value="3">Finance</option>
+                                                    <option value="4">Marketing</option>
+                                                    <option value="5">Operations</option>
+                                                    <option value="6">Sales</option>
+                                                    <option value="7">Research & Development</option>
+                                                    <option value="8">Customer Service</option>
+                                                    <option value="9">Administration</option>
+                                                </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="first_name" class="form-label">First Name</label>
+                                        <input type="text" class="form-control" id="first_name" name="first_name" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="last_name" class="form-label">Last Name</label>
+                                        <input type="text" class="form-control" id="last_name" name="last_name" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="email" class="form-label">Email</label>
+                                        <input type="email" class="form-control" id="email" name="email" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="phone" class="form-label">Phone</label>
+                                        <input type="tel" class="form-control" id="phone" name="phone" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="position" class="form-label">Position</label>
+                                        <input type="text" class="form-control" id="position" name="position" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="date_hired" class="form-label">Date Hired</label>
+                                        <input type="date" class="form-control" id="date_hired" name="date_hired" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="is_active" name="is_active" checked>
+                                        <label class="form-check-label" for="is_active">
+                                            Active Employee
+                                        </label>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <ul class="nav nav-tabs" id="myTab" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="camera-tab" data-bs-toggle="tab" data-bs-target="#camera" type="button" role="tab" aria-controls="camera" aria-selected="true">
+                                    <i class="fas fa-camera"></i> Use Camera
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload" type="button" role="tab" aria-controls="upload" aria-selected="false">
+                                    <i class="fas fa-upload"></i> Upload Picture
+                                </button>
+                            </li>
+                        </ul>
+                        
+                        <div class="tab-content" id="myTabContent">
+                            <!-- Camera Tab -->
+                            <div class="tab-pane fade show active" id="camera" role="tabpanel" aria-labelledby="camera-tab">
+                                <div class="video-wrapper">
+                                    <video id="video" autoplay></video>
+                                </div>
+                                
+                                <form id="cameraForm" method="post" enctype="multipart/form-data">
+                                    {% csrf_token %}
+                                    <canvas id="canvas" width="640" height="480" style="display: none;"></canvas>
+                                    <input type="hidden" id="image_data" name="image_data">
+                                    <input type="hidden" name="capture_method" value="camera">
+                                    <input type="hidden" id="is_new_employee" name="is_new_employee" value="false">
+                                    <input type="hidden" id="employee_form_data" name="employee_form_data" value="">
+                                    <img id="imagePreview" class="image-preview" src="" alt="Captured Image Preview" />
+                                    
+                                    <div class="d-grid gap-2">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-camera"></i> Capture Face
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                            
+                            <!-- Upload Tab -->
+                            <div class="tab-pane fade" id="upload" role="tabpanel" aria-labelledby="upload-tab">
+                                <form id="uploadForm" method="post" enctype="multipart/form-data">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="capture_method" value="upload">
+                                    <input type="hidden" id="is_new_employee_upload" name="is_new_employee" value="false">
+                                    <input type="hidden" id="employee_form_data_upload" name="employee_form_data" value="">
+                                    
+                                    <label for="photoFile" class="custom-file-upload">
+                                        <i class="fas fa-cloud-upload-alt"></i>
+                                        <p>Drag & drop a photo or click to browse</p>
+                                        <p class="text-secondary">Support formats: JPG, PNG, JPEG</p>
+                                    </label>
+                                    <input type="file" id="photoFile" name="photo" accept="image/*" required>
+                                    
+                                    <img id="uploadPreview" class="image-preview" src="" alt="Uploaded Image Preview" />
+                                    
+                                    <div class="d-grid gap-2 mt-3">
+                                        <button type="submit" class="btn btn-primary" id="uploadButton" disabled>
+                                            <i class="fas fa-save"></i> Register Face
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        <div class="back-button" onclick="location.href='{% url 'face_attendance:index' %}'">
+                            <i class="fas fa-home"></i> Back to Home
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Instructions</h3>
+                    </div>
+                    <div class="card-body">
+                        <ul class="nav nav-tabs" id="instructionsTab" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="camera-instructions-tab" data-bs-toggle="tab" data-bs-target="#camera-instructions" type="button" role="tab" aria-controls="camera-instructions" aria-selected="true">Camera</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="upload-instructions-tab" data-bs-toggle="tab" data-bs-target="#upload-instructions" type="button" role="tab" aria-controls="upload-instructions" aria-selected="false">Upload</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="employee-instructions-tab" data-bs-toggle="tab" data-bs-target="#employee-instructions" type="button" role="tab" aria-controls="employee-instructions" aria-selected="false">Employee Info</button>
+                            </li>
+                        </ul>
+                        
+                        <div class="tab-content" id="instructionsTabContent">
+                            <div class="tab-pane fade show active" id="camera-instructions" role="tabpanel" aria-labelledby="camera-instructions-tab">
+                                <div class="alert alert-info mt-3">
+                                    <h4>Camera Instructions:</h4>
+                                    <ul>
+                                        <li>Choose whether to register an existing employee or create a new one</li>
+                                        <li>Position your face in the frame</li>
+                                        <li>Click "Capture Face" to register</li>
+                                        <li>Press 'space-bar' to capture manually</li>
+                                        <li>Press 'q' to quit the camera at any time</li>
+                                        <li>Make sure you have good lighting</li>
+                                        <li>Look directly at the camera</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="upload-instructions" role="tabpanel" aria-labelledby="upload-instructions-tab">
+                                <div class="alert alert-info mt-3">
+                                    <h4>Upload Instructions:</h4>
+                                    <ul>
+                                        <li>Choose whether to register an existing employee or create a new one</li>
+                                        <li>Click on the upload area to browse for an image</li>
+                                        <li>Or drag and drop an image file</li>
+                                        <li>Uploaded image should clearly show the face</li>
+                                        <li>The image should be well-lit with no obstructions</li>
+                                        <li>Supported formats: JPG, PNG, JPEG</li>
+                                        <li>Maximum file size: 5MB</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="employee-instructions" role="tabpanel" aria-labelledby="employee-instructions-tab">
+                                <div class="alert alert-info mt-3">
+                                    <h4>Employee Registration:</h4>
+                                    <ul>
+                                        <li>To register an existing employee, simply select from the dropdown</li>
+                                        <li>To add a new employee, select "New Employee" and fill all required fields</li>
+                                        <li>Employee ID must be unique</li>
+                                        <li>Email address must be unique</li>
+                                        <li>All fields marked with * are required</li>
+                                        <li>Date hired should be in YYYY-MM-DD format</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="social-icons">
+                    <a href="#" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
+                    <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                    <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'js/register_face.js' %}"></script>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
+</body>
+</html>
