@@ -1,0 +1,480 @@
+/* CSS cho trang chi tiết lương nhân viên */
+body {
+    background-color: #f8f9fa;
+    font-family: 'Roboto', sans-serif;
+    color: #333;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 20px;
+}
+
+.heading {
+    color: #3f51b5;
+    text-align: center;
+    margin-bottom: 30px;
+    font-weight: 600;
+}
+
+.filter-container {
+    background-color: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.profile-card {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+}
+
+.profile-image {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 15px;
+    border: 5px solid #f0f4ff;
+}
+
+.profile-image-placeholder {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background-color: #f0f4ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 15px;
+    border: 5px solid #f0f4ff;
+}
+
+.profile-image-placeholder i {
+    font-size: 60px;
+    color: #3f51b5;
+}
+
+.profile-info {
+    text-align: center;
+    width: 100%;
+}
+
+.profile-info h2 {
+    color: #3f51b5;
+    font-size: 20px;
+    margin-bottom: 10px;
+}
+
+.profile-info p {
+    margin-bottom: 5px;
+    color: #495057;
+}
+
+.profile-info p i {
+    width: 20px;
+    color: #6c757d;
+    margin-right: 5px;
+}
+
+.salary-summary-card {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    overflow: hidden;
+    height: 100%;
+}
+
+.salary-summary-header {
+    background-color: #3f51b5;
+    color: white;
+    padding: 15px;
+    text-align: center;
+}
+
+.salary-summary-header h3 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.period {
+    font-size: 14px;
+    opacity: 0.8;
+    margin-top: 5px;
+}
+
+.salary-summary-body {
+    padding: 20px;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.summary-row:last-child {
+    border-bottom: none;
+}
+
+.summary-row.total {
+    font-weight: bold;
+    font-size: 18px;
+    color: #3f51b5;
+    border-top: 2px solid #eee;
+    padding-top: 15px;
+}
+
+.summary-label {
+    color: #495057;
+}
+
+.summary-value {
+    font-weight: 500;
+}
+
+.salary-summary-footer {
+    text-align: center;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-top: 1px solid #eee;
+}
+
+.card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    overflow: hidden;
+    margin-bottom: 30px;
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #eee;
+    padding: 15px 20px;
+}
+
+.card-header h3 {
+    margin: 0;
+    color: #3f51b5;
+    font-size: 18px;
+}
+
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    color: #495057;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.badge {
+    padding: 6px 10px;
+    border-radius: 4px;
+}
+
+.btn-primary, .btn-secondary {
+    color: white;
+}
+
+.btn-primary {
+    background-color: #3f51b5;
+    border-color: #3f51b5;
+}
+
+.btn-primary:hover {
+    background-color: #303f9f;
+    border-color: #303f9f;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+    border-color: #5a6268;
+}
+
+.btn-warning {
+    background-color: #ff9800;
+    border-color: #ff9800;
+    color: white;
+}
+
+.btn-warning:hover {
+    background-color: #f57c00;
+    border-color: #f57c00;
+    color: white;
+}
+
+@media (max-width: 768px) {
+    .profile-card, .salary-summary-card {
+        margin-bottom: 20px;
+    }
+}
+
+/* CSS for Employee Salary Page */
+body {
+    background-color: #f8f9fa;
+    font-family: 'Roboto', sans-serif;
+    color: #333;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 20px;
+}
+
+/* Employee profile section */
+.employee-profile-card {
+    background-color: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+}
+
+.profile-header {
+    background-color: #3f51b5;
+    color: white;
+    padding: 20px;
+    position: relative;
+}
+
+.profile-header h2 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 24px;
+}
+
+.profile-section {
+    display: flex;
+    padding: 20px;
+}
+
+.profile-avatar {
+    flex: 0 0 150px;
+    height: 150px;
+    overflow: hidden;
+    border-radius: 10px;
+    margin-right: 20px;
+    border: 3px solid #fff;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+}
+
+.profile-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    background-color: #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.avatar-placeholder i {
+    font-size: 60px;
+    color: #adb5bd;
+}
+
+.profile-info {
+    flex: 1;
+}
+
+.profile-info h3 {
+    margin-top: 0;
+    font-size: 22px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 15px;
+}
+
+.info-item {
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+}
+
+.info-item i {
+    width: 25px;
+    color: #6c757d;
+    font-size: 16px;
+}
+
+.profile-actions {
+    padding: 15px 20px;
+    background-color: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Salary information section */
+.salary-info-card {
+    background-color: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+}
+
+.salary-header {
+    padding: 15px 20px;
+    background-color: #f5f7f9;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.salary-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+}
+
+.salary-body {
+    padding: 20px;
+}
+
+.salary-summary {
+    margin-bottom: 25px;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px dashed #e9ecef;
+}
+
+.summary-row:last-child {
+    border-bottom: none;
+}
+
+.summary-row .label {
+    font-weight: 500;
+    color: #495057;
+}
+
+.summary-row .value {
+    font-weight: 600;
+    color: #333;
+}
+
+.salary-details-table {
+    margin-top: 20px;
+}
+
+.table-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 15px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+/* Total salary callout */
+.total-salary {
+    background-color: #e8f5e9;
+    padding: 15px 20px;
+    border-radius: 8px;
+    margin-top: 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.total-label {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2e7d32;
+}
+
+.total-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #2e7d32;
+}
+
+/* Button styling */
+.btn-primary {
+    background-color: #3f51b5;
+    border-color: #3f51b5;
+}
+
+.btn-primary:hover {
+    background-color: #303f9f;
+    border-color: #303f9f;
+}
+
+.btn-success {
+    background-color: #4caf50;
+    border-color: #4caf50;
+}
+
+.btn-success:hover {
+    background-color: #388e3c;
+    border-color: #388e3c;
+}
+
+.btn-outline-primary {
+    color: #3f51b5;
+    border-color: #3f51b5;
+}
+
+.btn-outline-primary:hover {
+    background-color: #3f51b5;
+    border-color: #3f51b5;
+    color: white;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .profile-section {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    
+    .profile-avatar {
+        margin-right: 0;
+        margin-bottom: 20px;
+    }
+    
+    .info-item {
+        justify-content: center;
+    }
+    
+    .total-salary {
+        flex-direction: column;
+    }
+    
+    .total-label {
+        margin-bottom: 5px;
+    }
+}

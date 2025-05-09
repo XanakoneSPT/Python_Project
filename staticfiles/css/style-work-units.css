@@ -1,0 +1,132 @@
+/* CSS cho trang tính công */
+body {
+    background-color: #f8f9fa;
+    font-family: 'Roboto', sans-serif;
+    color: #333;
+}
+
+/* CSS for Work Units List Page */
+.container {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 20px;
+}
+
+.heading {
+    font-size: 28px;
+    color: #333;
+    margin-bottom: 25px;
+    text-align: center;
+    font-weight: 700;
+}
+
+.filter-container {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.form-label {
+    font-weight: 500;
+    color: #495057;
+}
+
+/* Card styling */
+.card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    margin-bottom: 30px;
+    overflow: hidden;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* Table styling */
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    background-color: #f5f7f9;
+    color: #495057;
+    font-weight: 600;
+    vertical-align: middle;
+    padding: 12px 15px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.table td {
+    padding: 12px 15px;
+    vertical-align: middle;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0,123,255,0.03);
+}
+
+.btn-primary {
+    background-color: #3f51b5;
+    border-color: #3f51b5;
+}
+
+.btn-primary:hover {
+    background-color: #303f9f;
+    border-color: #303f9f;
+}
+
+.btn-success {
+    background-color: #4caf50;
+    border-color: #4caf50;
+}
+
+.btn-success:hover {
+    background-color: #388e3c;
+    border-color: #388e3c;
+}
+
+.btn-info {
+    background-color: #03a9f4;
+    border-color: #03a9f4;
+    color: white;
+}
+
+.btn-info:hover {
+    background-color: #0288d1;
+    border-color: #0288d1;
+    color: white;
+}
+
+/* Footer styling */
+.footer {
+    display: inline-block;
+    margin-top: 10px;
+    color: #6c757d;
+    text-decoration: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    transition: background-color 0.2s;
+}
+
+.footer:hover {
+    background-color: #f8f9fa;
+    color: #495057;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .filter-container form {
+        flex-direction: column;
+    }
+    
+    .filter-container .col-md-4,
+    .filter-container .col-md-3,
+    .filter-container .col-md-2 {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+}

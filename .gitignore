@@ -4,10 +4,6 @@ __pycache__/
 *$py.class
 *.so
 .Python
-env/
-venv/
-venv_py310/
-ENV/
 build/
 develop-eggs/
 dist/
@@ -19,6 +15,7 @@ lib64/
 parts/
 sdist/
 var/
+wheels/
 *.egg-info/
 .installed.cfg
 *.egg
@@ -26,31 +23,19 @@ var/
 # Django
 *.log
 local_settings.py
-db.sqlite3
 db.sqlite3-journal
-media/
-staticfiles/
 
-# Visual Studio Code
-.vscode/
-.idea/
-
-# macOS
-.DS_Store
-
-# Windows
-Thumbs.db
-ehthumbs.db
-Desktop.ini
-
-# Environments
-.env
-.venv
-env/
+# Environment
 venv/
+venv_py310/
 ENV/
 env.bak/
 venv.bak/
 
-# Tạm thời đặt lại để giữ lại media folder
-!media/
+# VS Code
+.vscode/
+.idea/
+
+# OS specific
+.DS_Store
+Thumbs.db

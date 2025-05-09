@@ -1,0 +1,121 @@
+.filter-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 25px;
+    background: white;
+    padding: 20px;
+    border-radius: 0.75rem;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+}
+
+.input-group {
+    flex: 1;
+    min-width: 250px;
+}
+
+.btn-custom {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    color: white;
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.btn-custom:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    color: white;
+}
+
+.table-container {
+    background: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+    padding: 20px;
+    margin-bottom: 25px;
+    overflow: hidden;
+}
+
+.table {
+    border: none;
+    margin-bottom: 0;
+}
+
+.table thead th {
+    background: #f8f9fc;
+    border-bottom: 1px solid #e3e6f0;
+    color: #5a5c69;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
+    vertical-align: middle;
+}
+
+.table td {
+    vertical-align: middle;
+    border-color: #e3e6f0;
+    color: #6e707e;
+}
+
+.employee-image {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e3e6f0;
+}
+
+.text-warning {
+    color: #f6c23e !important;
+}
+
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.pagination .page-item .page-link {
+    color: var(--primary-color);
+    border-color: #e3e6f0;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+.report-summary {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    color: white;
+    border-radius: 0.75rem;
+    padding: 20px;
+    margin-bottom: 25px;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+}
+
+.summary-card {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    padding: 15px;
+    text-align: center;
+}
+
+.summary-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.summary-label {
+    font-size: 0.875rem;
+    opacity: 0.8;
+}
+
+@media (max-width: 768px) {
+    .filter-container {
+        flex-direction: column;
+    }
+}
