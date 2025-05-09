@@ -1,106 +1,186 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Employee Attendance List</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'css/style-emp-atten-list.css' %}">  
-</head>
-<body>
-<div class="container">
-    <h2 class="heading">Employee Attendance Records</h2>
-    
+{% extends 'face_attendance/base.html' %}
+{% load static %}
+
+{% block title %}Danh Sách Chấm Công Nhân Viên | Hệ Thống Điểm Danh Khuôn Mặt{% endblock %}
+
+{% block page_title %}Danh Sách Chấm Công Nhân Viên{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/style-emp-atten-list.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Filter và tìm kiếm -->
     <form method="get" class="filter-container">
         <div class="input-group">
-            <input type="text" name="search" class="form-control" placeholder="Search for employees..." value="{{ search_query }}">
+            <input type="text" name="search" class="form-control" placeholder="Tìm kiếm nhân viên..." value="{{ search_query }}">
             <div class="input-group-append">
-                <button class="btn btn-custom" type="submit"><i class="fas fa-search"></i> Search</button>
+                <button class="btn btn-custom" type="submit"><i class="fas fa-search"></i> Tìm</button>
             </div>
         </div>
         <div class="input-group">
             <input type="date" name="attendance_date" class="form-control" value="{{ date_filter }}">
             <div class="input-group-append">
-                <button class="btn btn-custom" type="submit"><i class="fas fa-calendar-alt"></i> Filter</button>
+                <button class="btn btn-custom" type="submit"><i class="fas fa-calendar-alt"></i> Lọc</button>
             </div>
         </div>
         <div class="input-group">
-            <a href="?download_report=true&search={{ search_query }}&attendance_date={{ date_filter }}" class="btn btn-custom">
-                <i class="fas fa-download"></i> Download Report
+            <a href="?download_report=true&search={{ search_query }}&attendance_date={{ date_filter }}" class="btn btn-custom w-100">
+                <i class="fas fa-download"></i> Tải Báo Cáo
             </a>
         </div>
     </form>
     
-    <div class="table-responsive">
-        <table class="table table-bordered table-hover">
-            <thead>
-                <tr>
-                    <th>Emp Image</th>
-                    <th>Emp Name</th>
-                    <th>Emp ID</th>
-                    <th>Department</th>
-                    <th>Position</th>
-                    <th>Attendance Date</th>
-                    <th>Check-in Time</th>
-                    <th>Check-out Time</th>
-                    <th>Stayed Time</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for attendance in attendance_records %}
-                <tr>
-                    <td>
-                        {% if attendance.employee.profile_picture %}
-                            <img src="{{ attendance.employee.profile_picture.url }}" alt="{{ attendance.employee.first_name }}" class="employee-image">
-                        {% else %}
-                            <div class="text-muted">No Image</div>
-                        {% endif %}
-                    </td>
-                    <td>{{ attendance.employee.first_name }} {{ attendance.employee.last_name }}</td>
-                    <td>{{ attendance.employee.employee_id }}</td>
-                    <td>{{ attendance.employee.department.name }}</td>
-                    <td>{{ attendance.employee.position }}</td>
-                    <td>{{ attendance.date }}</td>
-                    <td>
-                        {% if attendance.check_in_time %}
-                            {{ attendance.check_in_time|date:"h:i:s A" }}
-                        {% else %}
-                            <span class="text-warning">Not Checked In</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if attendance.check_out_time %}
-                            {{ attendance.check_out_time|date:"h:i:s A" }}
-                        {% else %}
-                            <span class="text-warning">Not Checked Out</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if attendance.check_in_time and attendance.check_out_time %}
-                            {{ attendance.calculate_duration }}
-                        {% else %}
-                            <span class="text-warning">Incomplete</span>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="9" class="text-center">No attendance records found.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <!-- Tóm tắt báo cáo -->
+    <div class="report-summary">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="summary-card">
+                    <div class="summary-value">{{ total_records|default:"0" }}</div>
+                    <div class="summary-label">Tổng Số Bản Ghi</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="summary-card">
+                    <div class="summary-value">{{ total_employees|default:"0" }}</div>
+                    <div class="summary-label">Số Nhân Viên</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="summary-card">
+                    <div class="summary-value">{{ on_time_count|default:"0" }}</div>
+                    <div class="summary-label">Đúng Giờ</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="summary-card">
+                    <div class="summary-value">{{ late_count|default:"0" }}</div>
+                    <div class="summary-label">Đi Muộn</div>
+                </div>
+            </div>
+        </div>
     </div>
-
+    
+    <!-- Bảng dữ liệu -->
+    <div class="table-container">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Ảnh NV</th>
+                        <th>Tên NV</th>
+                        <th>Mã NV</th>
+                        <th>Phòng Ban</th>
+                        <th>Chức Vụ</th>
+                        <th>Ngày</th>
+                        <th>Giờ Vào</th>
+                        <th>Giờ Ra</th>
+                        <th>Thời Gian Làm Việc</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for attendance in attendance_records %}
+                    <tr>
+                        <td>
+                            {% if attendance.employee.profile_image %}
+                                <img src="{{ attendance.employee.profile_image.url }}" alt="{{ attendance.employee.first_name }}" class="employee-image">
+                            {% else %}
+                                <div class="text-muted text-center"><i class="fas fa-user-circle fa-2x"></i></div>
+                            {% endif %}
+                        </td>
+                        <td>{{ attendance.employee.first_name }} {{ attendance.employee.last_name }}</td>
+                        <td>{{ attendance.employee.employee_id }}</td>
+                        <td>{{ attendance.employee.department.name }}</td>
+                        <td>{{ attendance.employee.position }}</td>
+                        <td>{{ attendance.date }}</td>
+                        <td>
+                            {% if attendance.check_in_time %}
+                                <span class="badge bg-success text-white">{{ attendance.check_in_time|date:"H:i:s" }}</span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark">Chưa điểm danh vào</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if attendance.check_out_time %}
+                                <span class="badge bg-info text-white">{{ attendance.check_out_time|date:"H:i:s" }}</span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark">Chưa điểm danh ra</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if attendance.check_in_time and attendance.check_out_time %}
+                                <span class="badge bg-primary text-white">{{ attendance.calculate_duration }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary text-white">Chưa hoàn thành</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center">Không tìm thấy bản ghi chấm công nào.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Phân trang -->
+    {% if attendance_records.paginator.num_pages > 1 %}
+    <div class="pagination-container">
+        <ul class="pagination">
+            {% if attendance_records.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if date_filter %}&attendance_date={{ date_filter }}{% endif %}">&laquo; Đầu</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ attendance_records.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if date_filter %}&attendance_date={{ date_filter }}{% endif %}">Trước</a>
+                </li>
+            {% endif %}
+            
+            {% for num in attendance_records.paginator.page_range %}
+                {% if attendance_records.number == num %}
+                    <li class="page-item active">
+                        <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if date_filter %}&attendance_date={{ date_filter }}{% endif %}">{{ num }}</a>
+                    </li>
+                {% elif num > attendance_records.number|add:'-3' and num < attendance_records.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if date_filter %}&attendance_date={{ date_filter }}{% endif %}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if attendance_records.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ attendance_records.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if date_filter %}&attendance_date={{ date_filter }}{% endif %}">Tiếp</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ attendance_records.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if date_filter %}&attendance_date={{ date_filter }}{% endif %}">Cuối &raquo;</a>
+                </li>
+            {% endif %}
+        </ul>
+    </div>
+    {% endif %}
 </div>
-<div class="footer" onclick="location.href='{% url 'face_attendance:index' %}'" style="cursor: pointer;">
-    <i class="fas fa-home back-icon"></i> Back to Home
-</div>
+{% endblock %}
 
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-</body>
-</html>
+{% block extra_js %}
+<script>
+    // Thêm animation khi tải trang
+    document.addEventListener('DOMContentLoaded', function() {
+        const tableRows = document.querySelectorAll('tbody tr');
+        
+        tableRows.forEach((row, index) => {
+            row.style.opacity = '0';
+            row.style.transform = 'translateY(20px)';
+            row.style.transition = 'opacity 0.3s ease-out, transform 0.3s ease-out';
+            
+            setTimeout(() => {
+                row.style.opacity = '1';
+                row.style.transform = 'translateY(0)';
+            }, 100 + (index * 50));
+        });
+    });
+</script>
+{% endblock %}

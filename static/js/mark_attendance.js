@@ -3,7 +3,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const canvas = document.getElementById('canvas');
     const startButton = document.getElementById('startButton');
     const stopButton = document.getElementById('stopButton');
-    const captureButton = document.getElementById('captureButton');
     const statusContainer = document.getElementById('statusContainer');
     const processingIcon = document.getElementById('processingIcon');
     const successIcon = document.getElementById('successIcon');
@@ -14,7 +13,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const currentDateElement = document.getElementById('currentDate');
     const currentTimeElement = document.getElementById('currentTime');
     
+    // Global variables
     let stream = null;
+    let captureInterval = null;
+    let processingAttendance = false;
     
     // Update date and time
     function updateDateTime() {
@@ -26,71 +28,87 @@ document.addEventListener('DOMContentLoaded', function() {
         currentTimeElement.textContent = now.toLocaleTimeString('en-US', timeOptions);
     }
     
-    // Update date and time every second
+    // Initialize date and time and update every second
     updateDateTime();
     setInterval(updateDateTime, 1000);
     
     // Start camera
-    startButton.addEventListener('click', function() {
-        startCamera();
-    });
-    
-    // Stop camera
-    stopButton.addEventListener('click', function() {
-        stopCamera();
-    });
-    
-    // Capture image
-    captureButton.addEventListener('click', function() {
-        captureAndRecognize();
-    });
-    
-    function startCamera() {
-        // Access the webcam
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(function(mediaStream) {
-                stream = mediaStream;
-                video.srcObject = stream;
-                
-                // Show stop button and capture button, hide start button
-                startButton.style.display = 'none';
-                stopButton.style.display = 'inline-block';
-                captureButton.style.display = 'inline-block';
-                
-                // Hide any previous status
-                statusContainer.style.display = 'none';
-                successIcon.style.display = 'none';
-                failIcon.style.display = 'none';
-                processingIcon.style.display = 'block';
-                checkInStatus.style.display = 'none';
-                checkOutStatus.style.display = 'none';
-                
-                // Make sure video is visible and canvas is hidden
-                video.style.display = 'block';
-                canvas.style.display = 'none';
-            })
-            .catch(function(err) {
-                alert('Error accessing camera: ' + err.message);
+    async function startCamera() {
+        try {
+            // Request camera with higher resolution and quality for better face detection
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    width: { ideal: 1280 },  // Higher resolution
+                    height: { ideal: 720 },
+                    facingMode: "user",
+                    frameRate: { ideal: 30 } // Higher frame rate
+                }
             });
+            
+            // Set video source and ensure it's visible
+            video.srcObject = stream;
+            video.style.display = 'block'; // Make video element visible
+            
+            // Make sure the video element has proper dimensions
+            video.setAttribute('width', '100%');
+            video.setAttribute('height', 'auto');
+            
+            // Play the video
+            video.play().catch(e => console.error("Error playing video:", e));
+            
+            // Show camera controls and hide start button
+            document.getElementById('captureControls').style.display = 'flex';
+            startButton.style.display = 'none';
+            stopButton.style.display = 'block';
+            
+            // Hide any previous status
+            statusContainer.style.display = 'none';
+            processingIcon.style.display = 'none';
+            successIcon.style.display = 'none';
+            failIcon.style.display = 'none';
+            checkInStatus.style.display = 'none';
+            checkOutStatus.style.display = 'none';
+            
+            // Remove auto-capture interval - require manual capture only
+            // if (captureInterval) {
+            //     clearInterval(captureInterval);
+            //     captureInterval = null;
+            // }
+            
+            console.log("Camera started successfully");
+            
+        } catch (err) {
+            console.error("Error accessing camera:", err);
+            alert("Error accessing camera. Please make sure your camera is connected and permissions are granted.");
+        }
     }
     
+    // Stop camera
     function stopCamera() {
         if (stream) {
             stream.getTracks().forEach(track => track.stop());
             video.srcObject = null;
         }
         
-        // Reset display of video and canvas
-        video.style.display = 'block';
-        canvas.style.display = 'none';
+        // Clear the capture interval
+        if (captureInterval) {
+            clearInterval(captureInterval);
+            captureInterval = null;
+        }
         
-        // Show start button, hide stop button and capture button
+        // Show start button, hide stop button
         startButton.style.display = 'block';
         stopButton.style.display = 'none';
-        captureButton.style.display = 'none';
+        
+        // Reset status display
+        statusContainer.style.display = 'none';
     }
     
     function captureAndRecognize() {
+        if (!stream || processingAttendance) return;
+        
+        processingAttendance = true;
+        
         // Show status container
         statusContainer.style.display = 'block';
         recognitionStatus.textContent = 'Processing...';
@@ -106,30 +124,24 @@ document.addEventListener('DOMContentLoaded', function() {
         const context = canvas.getContext('2d');
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         
-        // Show the canvas with captured image
-        video.style.display = 'none';
-        canvas.style.display = 'block';
-        
         // Get image data as base64
         const imageData = canvas.toDataURL('image/jpeg');
         
         // Send to server for face recognition
         sendImageToServer(imageData);
-        
-        // Disable capture button while processing
-        captureButton.disabled = true;
     }
     
     function sendImageToServer(imageData) {
         // Get CSRF token
-        const csrftoken = getCookie('csrftoken');
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
         
-        fetch(window.location.href, {
+        // Use the correct URL path that matches the urls.py configuration
+        fetch('/attendance/', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
                 'X-CSRFToken': csrftoken,
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json',
             },
             body: JSON.stringify({
                 image_data: imageData
@@ -137,13 +149,21 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => response.json())
         .then(data => {
+            processingAttendance = false;
+            
             if (data.success) {
-                // Success
+                // Show success icon and message
                 processingIcon.style.display = 'none';
                 successIcon.style.display = 'block';
                 recognitionStatus.textContent = data.message;
                 
-                // Show check-in or check-out status
+                // Clear interval to stop capturing while showing the success message
+                if (captureInterval) {
+                    clearInterval(captureInterval);
+                    captureInterval = null;
+                }
+                
+                // Display the status badge
                 if (data.action === 'check_in') {
                     checkInStatus.style.display = 'inline-block';
                     checkOutStatus.style.display = 'none';
@@ -155,10 +175,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Play success sound if available
                 playSound('success');
                 
-                // Auto stop camera after success
+                // Automatically stop camera after success
                 setTimeout(stopCamera, 3000);
             } else {
-                // Failure
+                // Show fail icon and error message
                 processingIcon.style.display = 'none';
                 failIcon.style.display = 'block';
                 recognitionStatus.textContent = data.message;
@@ -166,28 +186,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Play failure sound if available
                 playSound('failure');
                 
-                // Re-enable capture button for retry
-                captureButton.disabled = false;
-                
-                // Switch back to video after 2 seconds
+                // Reset processing flag after a short delay
                 setTimeout(() => {
-                    video.style.display = 'block';
-                    canvas.style.display = 'none';
+                    processingAttendance = false;
                 }, 2000);
             }
         })
         .catch(error => {
+            console.error('Error:', error);
+            processingAttendance = false;
+            
             processingIcon.style.display = 'none';
             failIcon.style.display = 'block';
-            recognitionStatus.textContent = 'Error: ' + error.message;
+            recognitionStatus.textContent = 'Server error. Please try again.';
             
-            // Re-enable capture button for retry
-            captureButton.disabled = false;
-            
-            // Switch back to video after 2 seconds
+            // Wait a bit before resetting flags
             setTimeout(() => {
-                video.style.display = 'block';
-                canvas.style.display = 'none';
+                processingAttendance = false;
             }, 2000);
         });
     }
@@ -207,30 +222,34 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Function to get CSRF token from cookies
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
+    // Event listeners
+    startButton.addEventListener('click', startCamera);
+    stopButton.addEventListener('click', stopCamera);
+    
+    // Add event listener for manual capture button
+    const captureButton = document.getElementById('captureButton');
+    if (captureButton) {
+        captureButton.addEventListener('click', function() {
+            if (stream) {
+                // Capture image immediately when button is clicked
+                captureAndRecognize();
             }
-        }
-        return cookieValue;
+        });
     }
     
-    // Keyboard shortcuts
+    // Add keyboard shortcut for capturing with 'c' key
     document.addEventListener('keydown', function(event) {
-        if (event.key === 'q' && video.srcObject) {
+        if (event.key === 'c' && video.srcObject) {
+            // Capture photo when 'c' key is pressed and camera is running
+            captureAndRecognize();
+        } else if (event.key === 'q' && video.srcObject) {
             // Stop camera if 'q' is pressed and camera is running
             stopCamera();
-        } else if (event.key === 'c' && video.srcObject) {
-            // Capture image if 'c' is pressed and camera is running
-            captureAndRecognize();
         }
+    });
+    
+    // Handle page unload to ensure camera is stopped
+    window.addEventListener('beforeunload', function() {
+        stopCamera();
     });
 });

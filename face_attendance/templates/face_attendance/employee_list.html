@@ -1,85 +1,395 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Employee List</title>
-    <!-- Include necessary CSS -->
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'css/style-emp-list.css' %}">  
-</head>
-<body>
-    <div class="container">
-        <h1>Employee List</h1>
+{% extends 'face_attendance/base.html' %}
+{% load static %}
+
+{% block title %}Danh Sách Nhân Viên | Hệ Thống Điểm Danh Khuôn Mặt{% endblock %}
+
+{% block page_title %}Danh Sách Nhân Viên{% endblock %}
+
+{% block extra_css %}
+<style>
+    .employee-container {
+        padding: 1.5rem 0;
+    }
+    
+    .search-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+    
+    .search-box {
+        flex: 1;
+        max-width: 600px;
+        display: flex;
+    }
+    
+    .search-input {
+        flex: 1;
+        border: 1px solid #e3e6f0;
+        border-radius: 0.5rem 0 0 0.5rem;
+        padding: 0.675rem 1rem;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+        transition: all 0.3s ease;
+    }
+    
+    .search-input:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.25rem rgba(78, 115, 223, 0.25);
+        outline: none;
+    }
+    
+    .search-btn {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white;
+        border: none;
+        border-radius: 0 0.5rem 0.5rem 0;
+        padding: 0.675rem 1.25rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .search-btn:hover {
+        opacity: 0.9;
+        transform: translateY(-2px);
+    }
+    
+    .search-by-image {
+        background-color: white;
+        border: 1px solid #e3e6f0;
+        border-radius: 0.5rem;
+        padding: 0.675rem 1.25rem;
+        display: flex;
+        align-items: center;
+        font-weight: 500;
+        color: #5a5c69;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-left: 1rem;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+    }
+    
+    .search-by-image i {
+        color: var(--primary-color);
+        margin-right: 0.5rem;
+        font-size: 1.1rem;
+    }
+    
+    .search-by-image:hover {
+        background-color: #f8f9fc;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        border-color: var(--primary-color);
+    }
+    
+    .employee-table {
+        background-color: white;
+        border-radius: 0.75rem;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+    
+    .table-responsive {
+        overflow-x: auto;
+        min-height: 400px;
+    }
+    
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    thead {
+        background-color: #f8f9fc;
+    }
+    
+    th {
+        padding: 1rem 0.75rem;
+        text-align: left;
+        font-weight: 600;
+        color: #5a5c69;
+        border-bottom: 1px solid #e3e6f0;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+    }
+    
+    td {
+        padding: 0.75rem;
+        color: #6e707e;
+        border-bottom: 1px solid #e3e6f0;
+        vertical-align: middle;
+    }
+    
+    tbody tr {
+        transition: all 0.3s ease;
+    }
+    
+    tbody tr:hover {
+        background-color: #f8f9fc;
+        transform: translateY(-2px);
+    }
+    
+    .actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .action-btn {
+        padding: 0.4rem 0.75rem;
+        border-radius: 0.25rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .view-btn {
+        background-color: var(--primary-color);
+        color: white;
+    }
+    
+    .view-btn:hover {
+        background-color: #2e59d9;
+        color: white;
+        box-shadow: 0 4px 10px rgba(46, 89, 217, 0.2);
+    }
+    
+    .status-badge {
+        padding: 0.35rem 0.75rem;
+        border-radius: 2rem;
+        font-weight: 600;
+        font-size: 0.75rem;
+        display: inline-block;
+    }
+    
+    .status-active {
+        background-color: rgba(28, 200, 138, 0.1);
+        color: #1cc88a;
+        border: 1px solid rgba(28, 200, 138, 0.2);
+    }
+    
+    .status-inactive {
+        background-color: rgba(231, 74, 59, 0.1);
+        color: #e74a3b;
+        border: 1px solid rgba(231, 74, 59, 0.2);
+    }
+    
+    /* Modal Styles */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1050;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+    
+    .modal-content {
+        background-color: white;
+        margin: 10% auto;
+        border-radius: 1rem;
+        box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.2);
+        max-width: 500px;
+        width: 90%;
+        animation: modalAppear 0.3s ease;
+    }
+    
+    .modal-header {
+        padding: 1.25rem;
+        border-bottom: 1px solid #e3e6f0;
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white;
+        border-top-left-radius: 1rem;
+        border-top-right-radius: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .modal-title {
+        margin: 0;
+        font-weight: 600;
+    }
+    
+    .close-modal {
+        color: white;
+        font-size: 1.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .close-modal:hover {
+        transform: scale(1.1);
+    }
+    
+    .upload-area {
+        padding: 2rem;
+        text-align: center;
+        border: 2px dashed #e3e6f0;
+        margin: 1.5rem;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .upload-area:hover {
+        border-color: var(--primary-color);
+        background-color: rgba(78, 115, 223, 0.05);
+    }
+    
+    .upload-icon {
+        font-size: 3rem;
+        color: var(--primary-color);
+        margin-bottom: 1rem;
+    }
+    
+    .upload-text {
+        color: #6e707e;
+        margin-bottom: 1rem;
+    }
+    
+    .file-input {
+        display: none;
+    }
+    
+    .submit-search {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white;
+        border: none;
+        width: calc(100% - 3rem);
+        margin: 0 1.5rem 1.5rem;
+        padding: 0.875rem;
+        font-weight: 600;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .submit-search:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(78, 115, 223, 0.2);
+    }
+    
+    @keyframes modalAppear {
+        from {
+            transform: translateY(-50px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .search-container {
+            flex-direction: column;
+            align-items: stretch;
+        }
         
+        .search-box {
+            max-width: 100%;
+            margin-bottom: 1rem;
+        }
+        
+        .search-by-image {
+            margin-left: 0;
+            justify-content: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="employee-container">
         <div class="search-container">
+            <div class="search-box">
+                <input type="text" placeholder="Tìm kiếm nhân viên..." class="search-input">
+                <button type="button" class="search-btn">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
             <button class="search-by-image" id="searchByImageBtn">
                 <i class="fas fa-camera"></i>
-                <span>Search by Image</span>
+                <span>Tìm Kiếm Bằng Ảnh</span>
             </button>
         </div>
         
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Phone</th>
-                    <th>Position</th>
-                    <th>Department</th>
-                    <th>Active</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for emp in employees %}
-                <tr>
-                    <td>{{ emp.employee_id }}</td>
-                    <td>{{ emp.first_name }} {{ emp.last_name }}</td>
-                    <td>{{ emp.email }}</td>
-                    <td>{{ emp.phone }}</td>
-                    <td>{{ emp.position }}</td>
-                    <td>{{ emp.department.name }}</td>
-                    <td>{% if emp.is_active %} Yes {% else %} No {% endif %}</td>
-                    <td class="actions">
-                        <a href="{% url 'face_attendance:employee_detail' employee_id=emp.employee_id %}">View</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    
-    <!-- Search by Image Modal -->
-    <div id="searchModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">Search Employee by Image</h3>
-                <span class="close-modal">&times;</span>
+        <div class="employee-table">
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mã NV</th>
+                            <th>Tên Nhân Viên</th>
+                            <th>Email</th>
+                            <th>Số Điện Thoại</th>
+                            <th>Chức Vụ</th>
+                            <th>Phòng Ban</th>
+                            <th>Trạng Thái</th>
+                            <th>Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for emp in employees %}
+                        <tr>
+                            <td>{{ emp.employee_id }}</td>
+                            <td>{{ emp.first_name }} {{ emp.last_name }}</td>
+                            <td>{{ emp.email }}</td>
+                            <td>{{ emp.phone }}</td>
+                            <td>{{ emp.position }}</td>
+                            <td>{{ emp.department.name }}</td>
+                            <td>
+                                {% if emp.is_active %}
+                                    <span class="status-badge status-active">Đang làm việc</span>
+                                {% else %}
+                                    <span class="status-badge status-inactive">Đã nghỉ</span>
+                                {% endif %}
+                            </td>
+                            <td class="actions">
+                                <a href="{% url 'face_attendance:employee_detail' employee_id=emp.employee_id %}" class="action-btn view-btn">
+                                    <i class="fas fa-eye me-1"></i> Xem
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
-            <div id="uploadArea" class="upload-area">
-                <div class="upload-icon">
-                    <i class="fas fa-cloud-upload-alt"></i>
-                </div>
-                <div class="upload-text">
-                    Drag &amp; Drop or Click to Upload Image
-                </div>
-                <input type="file" id="imageFile" class="file-input" accept="image/*">
-            </div>
-            <button class="submit-search" id="submitSearch">Search</button>
         </div>
     </div>
-    
-    <!-- Back to home icon -->
-    <div class="footer" onclick="location.href='{% url 'face_attendance:index' %}'">
-        <i class="fas fa-home"></i> Back to Home
+</div>
+
+<!-- Search by Image Modal -->
+<div id="searchModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Tìm Nhân Viên Bằng Ảnh</h3>
+            <span class="close-modal">&times;</span>
+        </div>
+        <div id="uploadArea" class="upload-area">
+            <div class="upload-icon">
+                <i class="fas fa-cloud-upload-alt"></i>
+            </div>
+            <div class="upload-text">
+                Kéo & Thả hoặc Nhấp để Tải Lên Ảnh
+            </div>
+            <input type="file" id="imageFile" class="file-input" accept="image/*">
+        </div>
+        <button class="submit-search" id="submitSearch">Tìm Kiếm</button>
     </div>
-    
-    <!-- Scripts -->
-    <script src="{% static 'js/emp_list.js' %}"></script>
-</body>
-</html>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/emp_list.js' %}"></script>
+{% endblock %}

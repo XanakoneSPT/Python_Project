@@ -1,270 +1,658 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register Face | Face Attendance System</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'css/style-register-face.css' %}">  
-</head>
-<body>
-    <div class="container">
-        {% if messages %}
-        <div class="alert alert-info">
-            {% for message in messages %}
-                <p>{{ message }}</p>
-            {% endfor %}
-        </div>
-        {% endif %}
+{% extends 'face_attendance/base.html' %}
+{% load static %}
 
-        <div class="row">
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h3>Register Face</h3>
+{% block title %}Đăng Ký Khuôn Mặt | Hệ Thống Chấm Công{% endblock %}
+
+{% block page_title %}Đăng Ký Khuôn Mặt{% endblock %}
+
+{% block extra_css %}
+<style>
+    .register-card {
+        background-color: #ffffff;
+        border-radius: 0.75rem;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .register-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 2rem 0 rgba(58, 59, 69, 0.2);
+    }
+    
+    .register-card .card-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white;
+        padding: 1rem 1.5rem;
+        border: none;
+    }
+    
+    .register-card .card-header h3 {
+        margin: 0;
+        font-weight: 600;
+        font-size: 1.25rem;
+        color: white;
+    }
+    
+    .register-card .card-body {
+        padding: 1.5rem;
+    }
+    
+    .video-wrapper {
+        position: relative;
+        width: 100%;
+        height: 0;
+        padding-bottom: 75%;
+        margin-bottom: 1.25rem;
+        border-radius: 0.5rem;
+        overflow: hidden;
+        background-color: #f8f9fc;
+        border: 2px solid #e2e8f0;
+    }
+    
+    .video-wrapper video {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .image-preview {
+        width: 100%;
+        max-height: 300px;
+        object-fit: contain;
+        margin: 15px 0;
+        border-radius: 0.5rem;
+        display: none;
+        border: 2px solid #e2e8f0;
+    }
+    
+    .nav-tabs {
+        border-bottom: 1px solid #e2e8f0;
+        margin-bottom: 1.25rem;
+    }
+    
+    .nav-tabs .nav-link {
+        border: none;
+        color: #6c757d;
+        font-weight: 500;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .nav-tabs .nav-link:hover {
+        color: var(--primary-color);
+    }
+    
+    .nav-tabs .nav-link.active {
+        color: var(--primary-color);
+        border-bottom: 2px solid var(--primary-color);
+    }
+    
+    .form-label {
+        font-weight: 500;
+        color: #495057;
+    }
+    
+    .form-control {
+        border-radius: 0.5rem;
+        border: 1px solid #e2e8f0;
+        padding: 0.625rem 0.875rem;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.25rem rgba(78, 115, 223, 0.25);
+    }
+    
+    .form-select {
+        border-radius: 0.5rem;
+        border: 1px solid #e2e8f0;
+        padding: 0.625rem 0.875rem;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+        transition: all 0.3s ease;
+    }
+    
+    .form-select:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.25rem rgba(78, 115, 223, 0.25);
+    }
+    
+    .btn {
+        border-radius: 0.5rem;
+        padding: 0.625rem 1.25rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary {
+        background: var(--primary-color);
+        border: none;
+        box-shadow: 0 0.125rem 0.375rem rgba(78, 115, 223, 0.4);
+    }
+    
+    .btn-primary:hover {
+        background: #2e59d9;
+        transform: translateY(-2px);
+    }
+    
+    .btn-success {
+        background: var(--secondary-color);
+        border: none;
+        box-shadow: 0 0.125rem 0.375rem rgba(28, 200, 138, 0.4);
+    }
+    
+    .btn-success:hover {
+        background: #17a673;
+        transform: translateY(-2px);
+    }
+    
+    .custom-file-upload {
+        border: 2px dashed #e2e8f0;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        text-align: center;
+        cursor: pointer;
+        margin-bottom: 1.25rem;
+        transition: all 0.3s ease;
+        background-color: #f8f9fc;
+    }
+    
+    .custom-file-upload:hover {
+        border-color: var(--primary-color);
+        background-color: rgba(78, 115, 223, 0.05);
+    }
+    
+    .custom-file-upload i {
+        font-size: 2.5rem;
+        color: var(--primary-color);
+        margin-bottom: 0.875rem;
+    }
+    
+    input[type="file"] {
+        display: none;
+    }
+    
+    .alert {
+        border-radius: 0.5rem;
+        margin-bottom: 1.25rem;
+    }
+    
+    .alert-info {
+        background-color: #e3f2fd;
+        border-left: 4px solid var(--primary-color);
+        color: #0c5460;
+    }
+    
+    .footer-link {
+        display: inline-block;
+        margin-top: 0.625rem;
+        color: #495057;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .footer-link:hover {
+        color: var(--primary-color);
+        transform: translateX(-5px);
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .register-card .card-body {
+            padding: 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    {% if messages %}
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        {% for message in messages %}
+            <p class="mb-0">{{ message }}</p>
+        {% endfor %}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="register-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-user-plus me-2"></i> Đăng Ký Khuôn Mặt</h3>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4 text-center">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="registerType" id="existingEmployee" value="existing" checked>
+                            <label class="form-check-label" for="existingEmployee">
+                                <i class="fas fa-user me-1"></i> Nhân Viên Hiện Có
+                            </label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="registerType" id="newEmployee" value="new">
+                            <label class="form-check-label" for="newEmployee">
+                                <i class="fas fa-user-plus me-1"></i> Nhân Viên Mới
+                            </label>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <div class="mb-3 text-center">
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="registerType" id="existingEmployee" value="existing" checked>
-                                <label class="form-check-label" for="existingEmployee">Existing Employee</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="registerType" id="newEmployee" value="new">
-                                <label class="form-check-label" for="newEmployee">New Employee</label>
-                            </div>
+                    
+                    <!-- Existing Employee Selection -->
+                    <div id="existingEmployeeSection">
+                        <div class="mb-3">
+                            <label for="employee_id" class="form-label">
+                                <i class="fas fa-user-tag me-1"></i> Chọn Nhân Viên
+                            </label>
+                            <select class="form-select" id="employee_id" name="employee_id" required>
+                                <option value="">Chọn Nhân Viên</option>
+                                {% for employee in employees %}
+                                    <option value="{{ employee.id }}">{{ employee.first_name }} {{ employee.last_name }} ({{ employee.employee_id }})</option>
+                                {% endfor %}
+                            </select>
                         </div>
-                        
-                        <!-- Existing Employee Selection -->
-                        <div id="existingEmployeeSection">
+                    </div>
+                    
+                    <!-- New Employee Form -->
+                    <div id="newEmployeeSection" style="display: none;">
+                        <form id="employeeForm">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="employee_id_new" class="form-label">
+                                        <i class="fas fa-id-card me-1"></i> Mã Nhân Viên
+                                    </label>
+                                    <input type="text" class="form-control" id="employee_id_new" name="employee_id_new" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="department" class="form-label">
+                                        <i class="fas fa-building me-1"></i> Phòng Ban
+                                    </label>
+                                    <select class="form-select" id="department" name="department" required>
+                                        <option value="">Chọn Phòng Ban</option>
+                                        <option value="1">Nhân Sự</option>
+                                        <option value="2">Công Nghệ Thông Tin</option>
+                                        <option value="3">Tài Chính</option>
+                                        <option value="4">Marketing</option>
+                                        <option value="5">Vận Hành</option>
+                                        <option value="6">Kinh Doanh</option>
+                                        <option value="7">Nghiên Cứu & Phát Triển</option>
+                                        <option value="8">Chăm Sóc Khách Hàng</option>
+                                        <option value="9">Hành Chính</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="first_name" class="form-label">
+                                        <i class="fas fa-user me-1"></i> Tên
+                                    </label>
+                                    <input type="text" class="form-control" id="first_name" name="first_name" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="last_name" class="form-label">
+                                        <i class="fas fa-user me-1"></i> Họ
+                                    </label>
+                                    <input type="text" class="form-control" id="last_name" name="last_name" required>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="email" class="form-label">
+                                        <i class="fas fa-envelope me-1"></i> Email
+                                    </label>
+                                    <input type="email" class="form-control" id="email" name="email" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="phone" class="form-label">
+                                        <i class="fas fa-phone me-1"></i> Số Điện Thoại
+                                    </label>
+                                    <input type="tel" class="form-control" id="phone" name="phone" required>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="position" class="form-label">
+                                        <i class="fas fa-briefcase me-1"></i> Chức Vụ
+                                    </label>
+                                    <input type="text" class="form-control" id="position" name="position" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="date_hired" class="form-label">
+                                        <i class="fas fa-calendar-alt me-1"></i> Ngày Tuyển Dụng
+                                    </label>
+                                    <input type="date" class="form-control" id="date_hired" name="date_hired" required>
+                                </div>
+                            </div>
+                            
                             <div class="mb-3">
-                                <label for="employee_id" class="form-label">Select Employee</label>
-                                <select class="form-select" id="employee_id" name="employee_id" required>
-                                    <option value="">Select Employee</option>
-                                    {% for employee in employee %}
-                                        <option value="{{ employee.id }}">{{ employee.first_name }} {{ employee.last_name }} ({{ employee.employee_id }})</option>
-                                    {% endfor %}
-                                </select>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="is_active" name="is_active" checked>
+                                    <label class="form-check-label" for="is_active">
+                                        <i class="fas fa-toggle-on me-1"></i> Nhân Viên Đang Hoạt Động
+                                    </label>
+                                </div>
                             </div>
-                        </div>
-                        
-                        <!-- New Employee Form -->
-                        <div id="newEmployeeSection" style="display: none;">
-                            <form id="employeeForm">
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label for="employee_id_new" class="form-label">Employee ID</label>
-                                        <input type="text" class="form-control" id="employee_id_new" name="employee_id_new" required>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                                <label for="department" class="form-label">Department</label>
-                                                <select class="form-select" id="department" name="department" required>
-                                                    <option value="">Select Department</option>
-                                                    <option value="1">Human Resources</option>
-                                                    <option value="2">Information Technology</option>
-                                                    <option value="3">Finance</option>
-                                                    <option value="4">Marketing</option>
-                                                    <option value="5">Operations</option>
-                                                    <option value="6">Sales</option>
-                                                    <option value="7">Research & Development</option>
-                                                    <option value="8">Customer Service</option>
-                                                    <option value="9">Administration</option>
-                                                </select>
-                                    </div>
-                                </div>
+                        </form>
+                    </div>
+                    
+                    <ul class="nav nav-tabs" id="myTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="camera-tab" data-bs-toggle="tab" data-bs-target="#camera" type="button" role="tab" aria-controls="camera" aria-selected="true">
+                                <i class="fas fa-camera me-1"></i> Sử Dụng Camera
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload" type="button" role="tab" aria-controls="upload" aria-selected="false">
+                                <i class="fas fa-upload me-1"></i> Tải Lên Ảnh
+                            </button>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content" id="myTabContent">
+                        <!-- Camera Tab -->
+                        <div class="tab-pane fade show active" id="camera" role="tabpanel" aria-labelledby="camera-tab">
+                            <div class="video-wrapper mt-3">
+                                <video id="video" autoplay></video>
+                            </div>
+                            
+                            <form id="cameraForm" method="post" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                <canvas id="canvas" width="640" height="480" style="display: none;"></canvas>
+                                <input type="hidden" id="image_data" name="image_data">
+                                <input type="hidden" name="capture_method" value="camera">
+                                <input type="hidden" id="is_new_employee" name="is_new_employee" value="false">
+                                <input type="hidden" id="employee_form_data" name="employee_form_data" value="">
+                                <img id="imagePreview" class="image-preview" src="" alt="Xem Trước Ảnh Đã Chụp" />
                                 
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label for="first_name" class="form-label">First Name</label>
-                                        <input type="text" class="form-control" id="first_name" name="first_name" required>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label for="last_name" class="form-label">Last Name</label>
-                                        <input type="text" class="form-control" id="last_name" name="last_name" required>
-                                    </div>
-                                </div>
-                                
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label for="email" class="form-label">Email</label>
-                                        <input type="email" class="form-control" id="email" name="email" required>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label for="phone" class="form-label">Phone</label>
-                                        <input type="tel" class="form-control" id="phone" name="phone" required>
-                                    </div>
-                                </div>
-                                
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label for="position" class="form-label">Position</label>
-                                        <input type="text" class="form-control" id="position" name="position" required>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label for="date_hired" class="form-label">Date Hired</label>
-                                        <input type="date" class="form-control" id="date_hired" name="date_hired" required>
-                                    </div>
-                                </div>
-                                
-                                <div class="mb-3">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="is_active" name="is_active" checked>
-                                        <label class="form-check-label" for="is_active">
-                                            Active Employee
-                                        </label>
-                                    </div>
+                                <div class="d-grid gap-2">
+                                    <button type="button" id="captureButton" class="btn btn-primary mb-2">
+                                        <i class="fas fa-camera me-1"></i> Chụp Ảnh
+                                    </button>
+                                    <button type="submit" id="submitCameraButton" class="btn btn-success" disabled>
+                                        <i class="fas fa-save me-1"></i> Đăng Ký Khuôn Mặt
+                                    </button>
                                 </div>
                             </form>
                         </div>
                         
-                        <ul class="nav nav-tabs" id="myTab" role="tablist">
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link active" id="camera-tab" data-bs-toggle="tab" data-bs-target="#camera" type="button" role="tab" aria-controls="camera" aria-selected="true">
-                                    <i class="fas fa-camera"></i> Use Camera
-                                </button>
-                            </li>
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload" type="button" role="tab" aria-controls="upload" aria-selected="false">
-                                    <i class="fas fa-upload"></i> Upload Picture
-                                </button>
-                            </li>
-                        </ul>
-                        
-                        <div class="tab-content" id="myTabContent">
-                            <!-- Camera Tab -->
-                            <div class="tab-pane fade show active" id="camera" role="tabpanel" aria-labelledby="camera-tab">
-                                <div class="video-wrapper">
-                                    <video id="video" autoplay></video>
-                                </div>
+                        <!-- Upload Tab -->
+                        <div class="tab-pane fade" id="upload" role="tabpanel" aria-labelledby="upload-tab">
+                            <form id="uploadForm" method="post" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                <input type="hidden" name="capture_method" value="upload">
+                                <input type="hidden" id="is_new_employee_upload" name="is_new_employee" value="false">
+                                <input type="hidden" id="employee_form_data_upload" name="employee_form_data" value="">
                                 
-                                <form id="cameraForm" method="post" enctype="multipart/form-data">
-                                    {% csrf_token %}
-                                    <canvas id="canvas" width="640" height="480" style="display: none;"></canvas>
-                                    <input type="hidden" id="image_data" name="image_data">
-                                    <input type="hidden" name="capture_method" value="camera">
-                                    <input type="hidden" id="is_new_employee" name="is_new_employee" value="false">
-                                    <input type="hidden" id="employee_form_data" name="employee_form_data" value="">
-                                    <img id="imagePreview" class="image-preview" src="" alt="Captured Image Preview" />
-                                    
-                                    <div class="d-grid gap-2">
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-camera"></i> Capture Face
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                            
-                            <!-- Upload Tab -->
-                            <div class="tab-pane fade" id="upload" role="tabpanel" aria-labelledby="upload-tab">
-                                <form id="uploadForm" method="post" enctype="multipart/form-data">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="capture_method" value="upload">
-                                    <input type="hidden" id="is_new_employee_upload" name="is_new_employee" value="false">
-                                    <input type="hidden" id="employee_form_data_upload" name="employee_form_data" value="">
-                                    
-                                    <label for="photoFile" class="custom-file-upload">
-                                        <i class="fas fa-cloud-upload-alt"></i>
-                                        <p>Drag & drop a photo or click to browse</p>
-                                        <p class="text-secondary">Support formats: JPG, PNG, JPEG</p>
-                                    </label>
-                                    <input type="file" id="photoFile" name="photo" accept="image/*" required>
-                                    
-                                    <img id="uploadPreview" class="image-preview" src="" alt="Uploaded Image Preview" />
-                                    
-                                    <div class="d-grid gap-2 mt-3">
-                                        <button type="submit" class="btn btn-primary" id="uploadButton" disabled>
-                                            <i class="fas fa-save"></i> Register Face
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                        
-                        <div class="back-button" onclick="location.href='{% url 'face_attendance:index' %}'">
-                            <i class="fas fa-home"></i> Back to Home
+                                <label for="photoFile" class="custom-file-upload mt-3">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <p>Kéo & thả ảnh hoặc nhấp để chọn</p>
+                                    <p class="text-secondary">Hỗ trợ định dạng: JPG, PNG, JPEG</p>
+                                </label>
+                                <input type="file" id="photoFile" name="photo" accept="image/*" required>
+                                
+                                <img id="uploadPreview" class="image-preview" src="" alt="Xem Trước Ảnh Đã Tải Lên" />
+                                
+                                <div class="d-grid gap-2 mt-3">
+                                    <button type="submit" class="btn btn-success" id="uploadButton" disabled>
+                                        <i class="fas fa-save me-1"></i> Đăng Ký Khuôn Mặt
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </div>
+                    
+                    <a href="{% url 'face_attendance:index' %}" class="footer-link mt-3">
+                        <i class="fas fa-home me-1"></i> Quay Lại Trang Chủ
+                    </a>
                 </div>
             </div>
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h3>Instructions</h3>
-                    </div>
-                    <div class="card-body">
-                        <ul class="nav nav-tabs" id="instructionsTab" role="tablist">
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link active" id="camera-instructions-tab" data-bs-toggle="tab" data-bs-target="#camera-instructions" type="button" role="tab" aria-controls="camera-instructions" aria-selected="true">Camera</button>
-                            </li>
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="upload-instructions-tab" data-bs-toggle="tab" data-bs-target="#upload-instructions" type="button" role="tab" aria-controls="upload-instructions" aria-selected="false">Upload</button>
-                            </li>
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="employee-instructions-tab" data-bs-toggle="tab" data-bs-target="#employee-instructions" type="button" role="tab" aria-controls="employee-instructions" aria-selected="false">Employee Info</button>
-                            </li>
-                        </ul>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="register-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-question-circle me-2"></i> Hướng Dẫn</h3>
+                </div>
+                <div class="card-body">
+                    <ul class="nav nav-tabs" id="instructionsTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="camera-instructions-tab" data-bs-toggle="tab" data-bs-target="#camera-instructions" type="button" role="tab" aria-controls="camera-instructions" aria-selected="true">
+                                <i class="fas fa-camera me-1"></i> Camera
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="upload-instructions-tab" data-bs-toggle="tab" data-bs-target="#upload-instructions" type="button" role="tab" aria-controls="upload-instructions" aria-selected="false">
+                                <i class="fas fa-upload me-1"></i> Tải Lên
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="employee-instructions-tab" data-bs-toggle="tab" data-bs-target="#employee-instructions" type="button" role="tab" aria-controls="employee-instructions" aria-selected="false">
+                                <i class="fas fa-user me-1"></i> Thông Tin NV
+                            </button>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content mt-3" id="instructionsTabContent">
+                        <div class="tab-pane fade show active" id="camera-instructions" role="tabpanel" aria-labelledby="camera-instructions-tab">
+                            <div class="alert alert-info">
+                                <h5><i class="fas fa-info-circle me-2"></i>Hướng Dẫn Sử Dụng Camera:</h5>
+                                <ul class="mb-0">
+                                    <li>Chọn đăng ký cho nhân viên hiện có hoặc tạo nhân viên mới</li>
+                                    <li>Đặt khuôn mặt vào khung hình</li>
+                                    <li>Nhấn "Chụp Ảnh" để chụp hình</li>
+                                    <li>Kiểm tra ảnh và nhấn "Đăng Ký Khuôn Mặt" để lưu</li>
+                                    <li>Nhấn phím 'space-bar' để chụp thủ công</li>
+                                    <li>Nhấn phím 'q' để thoát camera bất kỳ lúc nào</li>
+                                    <li>Đảm bảo ánh sáng tốt</li>
+                                    <li>Nhìn thẳng vào camera</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="upload-instructions" role="tabpanel" aria-labelledby="upload-instructions-tab">
+                            <div class="alert alert-info">
+                                <h5><i class="fas fa-info-circle me-2"></i>Hướng Dẫn Tải Lên:</h5>
+                                <ul class="mb-0">
+                                    <li>Chọn đăng ký cho nhân viên hiện có hoặc tạo nhân viên mới</li>
+                                    <li>Nhấp vào khu vực tải lên để chọn ảnh</li>
+                                    <li>Hoặc kéo và thả file ảnh</li>
+                                    <li>Ảnh tải lên phải hiển thị rõ khuôn mặt</li>
+                                    <li>Ảnh cần đủ sáng và không bị che khuất</li>
+                                    <li>Định dạng hỗ trợ: JPG, PNG, JPEG</li>
+                                    <li>Kích thước tối đa: 5MB</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="employee-instructions" role="tabpanel" aria-labelledby="employee-instructions-tab">
+                            <div class="alert alert-info">
+                                <h5><i class="fas fa-info-circle me-2"></i>Đăng Ký Nhân Viên:</h5>
+                                <ul class="mb-0">
+                                    <li>Để đăng ký nhân viên hiện có, chỉ cần chọn từ danh sách</li>
+                                    <li>Để thêm nhân viên mới, chọn "Nhân Viên Mới" và điền tất cả thông tin</li>
+                                    <li>Mã nhân viên phải là duy nhất</li>
+                                    <li>Địa chỉ email phải là duy nhất</li>
+                                    <li>Tất cả các trường đánh dấu * là bắt buộc</li>
+                                    <li>Ngày tuyển dụng nên theo định dạng YYYY-MM-DD</li>
+                                </ul>
+                            </div>
+                        </div>
                         
-                        <div class="tab-content" id="instructionsTabContent">
-                            <div class="tab-pane fade show active" id="camera-instructions" role="tabpanel" aria-labelledby="camera-instructions-tab">
-                                <div class="alert alert-info mt-3">
-                                    <h4>Camera Instructions:</h4>
-                                    <ul>
-                                        <li>Choose whether to register an existing employee or create a new one</li>
-                                        <li>Position your face in the frame</li>
-                                        <li>Click "Capture Face" to register</li>
-                                        <li>Press 'space-bar' to capture manually</li>
-                                        <li>Press 'q' to quit the camera at any time</li>
-                                        <li>Make sure you have good lighting</li>
-                                        <li>Look directly at the camera</li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <div class="tab-pane fade" id="upload-instructions" role="tabpanel" aria-labelledby="upload-instructions-tab">
-                                <div class="alert alert-info mt-3">
-                                    <h4>Upload Instructions:</h4>
-                                    <ul>
-                                        <li>Choose whether to register an existing employee or create a new one</li>
-                                        <li>Click on the upload area to browse for an image</li>
-                                        <li>Or drag and drop an image file</li>
-                                        <li>Uploaded image should clearly show the face</li>
-                                        <li>The image should be well-lit with no obstructions</li>
-                                        <li>Supported formats: JPG, PNG, JPEG</li>
-                                        <li>Maximum file size: 5MB</li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <div class="tab-pane fade" id="employee-instructions" role="tabpanel" aria-labelledby="employee-instructions-tab">
-                                <div class="alert alert-info mt-3">
-                                    <h4>Employee Registration:</h4>
-                                    <ul>
-                                        <li>To register an existing employee, simply select from the dropdown</li>
-                                        <li>To add a new employee, select "New Employee" and fill all required fields</li>
-                                        <li>Employee ID must be unique</li>
-                                        <li>Email address must be unique</li>
-                                        <li>All fields marked with * are required</li>
-                                        <li>Date hired should be in YYYY-MM-DD format</li>
-                                    </ul>
+                        <div class="mt-4">
+                            <div class="register-card">
+                                <div class="card-body">
+                                    <h5><i class="fas fa-shield-alt me-2"></i>Lưu ý bảo mật:</h5>
+                                    <p>Hệ thống này sử dụng công nghệ nhận diện khuôn mặt hiện đại để đảm bảo tính chính xác và an toàn trong quá trình chấm công.</p>
+                                    <p class="mb-0">Dữ liệu khuôn mặt của bạn được mã hóa và lưu trữ an toàn, chỉ được sử dụng cho mục đích chấm công.</p>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                
-                <div class="social-icons">
-                    <a href="#" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
-                    <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
-                    <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
                 </div>
             </div>
         </div>
     </div>
+</div>
+{% endblock %}
 
-    <script src="{% static 'js/register_face.js' %}"></script>
-
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
-</body>
-</html>
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="{% static 'js/register_face.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Camera capture functionality
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const imagePreview = document.getElementById('imagePreview');
+        const captureButton = document.getElementById('captureButton');
+        const submitCameraButton = document.getElementById('submitCameraButton');
+        const imageDataInput = document.getElementById('image_data');
+        
+        // Start camera when the camera tab is shown
+        document.getElementById('camera-tab').addEventListener('click', startCamera);
+        
+        // Stop camera when upload tab is shown
+        document.getElementById('upload-tab').addEventListener('click', stopCamera);
+        
+        function startCamera() {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(function(stream) {
+                        video.srcObject = stream;
+                        video.play();
+                    })
+                    .catch(function(error) {
+                        console.error("Error accessing the camera: ", error);
+                        alert("Không thể truy cập camera. Vui lòng đảm bảo bạn đã cấp quyền truy cập camera.");
+                    });
+            }
+        }
+        
+        function stopCamera() {
+            if (video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+                video.srcObject = null;
+            }
+        }
+        
+        // Initialize camera when the page loads
+        startCamera();
+        
+        // Capture image when capture button is clicked
+        captureButton.addEventListener('click', function() {
+            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+            let imageData = canvas.toDataURL('image/jpeg');
+            imageDataInput.value = imageData;
+            imagePreview.src = imageData;
+            imagePreview.style.display = 'block';
+            submitCameraButton.disabled = false;
+        });
+        
+        // Handle photo file upload preview
+        const photoFile = document.getElementById('photoFile');
+        const uploadPreview = document.getElementById('uploadPreview');
+        const uploadButton = document.getElementById('uploadButton');
+        
+        photoFile.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    uploadPreview.src = e.target.result;
+                    uploadPreview.style.display = 'block';
+                    uploadButton.disabled = false;
+                };
+                
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+        
+        // Toggle between existing and new employee sections
+        const existingEmployeeRadio = document.getElementById('existingEmployee');
+        const newEmployeeRadio = document.getElementById('newEmployee');
+        const existingEmployeeSection = document.getElementById('existingEmployeeSection');
+        const newEmployeeSection = document.getElementById('newEmployeeSection');
+        const isNewEmployeeInput = document.getElementById('is_new_employee');
+        const isNewEmployeeUploadInput = document.getElementById('is_new_employee_upload');
+        
+        existingEmployeeRadio.addEventListener('change', function() {
+            if (this.checked) {
+                existingEmployeeSection.style.display = 'block';
+                newEmployeeSection.style.display = 'none';
+                isNewEmployeeInput.value = 'false';
+                isNewEmployeeUploadInput.value = 'false';
+            }
+        });
+        
+        newEmployeeRadio.addEventListener('change', function() {
+            if (this.checked) {
+                existingEmployeeSection.style.display = 'none';
+                newEmployeeSection.style.display = 'block';
+                isNewEmployeeInput.value = 'true';
+                isNewEmployeeUploadInput.value = 'true';
+            }
+        });
+        
+        // Process form data
+        const employeeFormData = document.getElementById('employee_form_data');
+        const employeeFormDataUpload = document.getElementById('employee_form_data_upload');
+        const cameraForm = document.getElementById('cameraForm');
+        const uploadForm = document.getElementById('uploadForm');
+        
+        cameraForm.addEventListener('submit', function(e) {
+            if (newEmployeeRadio.checked) {
+                const formData = getFormData();
+                employeeFormData.value = JSON.stringify(formData);
+            }
+        });
+        
+        uploadForm.addEventListener('submit', function(e) {
+            if (newEmployeeRadio.checked) {
+                const formData = getFormData();
+                employeeFormDataUpload.value = JSON.stringify(formData);
+            }
+        });
+        
+        function getFormData() {
+            return {
+                employee_id: document.getElementById('employee_id_new').value,
+                first_name: document.getElementById('first_name').value,
+                last_name: document.getElementById('last_name').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                position: document.getElementById('position').value,
+                date_hired: document.getElementById('date_hired').value,
+                department: document.getElementById('department').value,
+                is_active: document.getElementById('is_active').checked
+            };
+        }
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(event) {
+            if (event.code === 'Space' && video.srcObject) {
+                // Space bar - capture image
+                captureButton.click();
+                event.preventDefault();
+            } else if (event.key === 'q' && video.srcObject) {
+                // 'Q' key - stop camera
+                stopCamera();
+                event.preventDefault();
+            }
+        });
+        
+        // Clean up camera on page unload
+        window.addEventListener('beforeunload', function() {
+            stopCamera();
+        });
+    });
+</script>
+{% endblock %}

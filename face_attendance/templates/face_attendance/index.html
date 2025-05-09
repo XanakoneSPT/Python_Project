@@ -1,82 +1,313 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI-Powered Employee Attendance System</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'css/style-index.css' %}">  
-</head>
-<body>
-    <button class="sidebar-toggle" id="sidebarToggle">
-        <i class="fas fa-bars"></i>
-    </button>
+{% extends 'face_attendance/base.html' %}
+{% load static %}
 
-    <div class="container">
-        <div class="sidebar" id="sidebar">
-            <div class="sidebar-logo">
-                <h2>Dashboard</h2>
-            </div>
-            <div class="sidebar-menu">
-                <a href="{% url 'face_attendance:register_face' %}"><i class="fas fa-user-plus"></i> <span>Employee Registration</span></a>
-                <a href="{% url 'face_attendance:employee_list' %}"><i class="fas fa-user-friends"></i> <span>View Employee</span></a>
-                <a href="{% url 'face_attendance:mark_attendance' %}"><i class="fas fa-camera"></i> <span>Mark Attendance</span></a>
-                <a href="{% url 'face_attendance:emp_attendance_list' %}"><i class="fas fa-list"></i> <span>Attendance Details</span></a>
-            </div>
-        </div>
-        
-        <div class="main-content" id="mainContent">
-            <!-- Login Section -->
-            <div class="login-section">
-                {% if user.is_authenticated %}
-                    <div class="logged-in-user">
-                        <i class="fas fa-user-circle"></i>
-                        {{ user.username }}
-                    </div>
-                    <form method="post" action="{% url 'logout' %}" style="display: inline;">
-                        {% csrf_token %}
-                        <button type="submit" class="logout-btn">
-                            <i class="fas fa-sign-out-alt"></i> Logout
-                        </button>
-                    </form>
-                {% else %}
-                    <a href="{% url 'login' %}" class="login-btn">
-                        <i class="fas fa-sign-in-alt"></i> Login
-                    </a>
-                {% endif %}
-            </div>
+{% block title %}Hệ Thống Điểm Danh Khuôn Mặt Thông Minh{% endblock %}
 
-            <div class="dashboard-header">
-                <h1>Face Based Employee Attendance System</h1>
-            </div>
-            <div class="hero-section">
-                <div class="buttons">
-                    <div class="card">
-                        <a href="{% url 'face_attendance:register_face' %}"><i class="fas fa-user-plus"></i></a>
-                        <p>Register Employee</p>
-                    </div>
-                    <div class="card">
-                        <a href="{% url 'face_attendance:employee_list' %}"><i class="fas fa-user-friends"></i></a>
-                        <p>Authorize Employee</p>
-                    </div>
-                    <div class="card">
-                        <a href="{% url 'face_attendance:mark_attendance' %}"><i class="fas fa-camera"></i></a>
-                        <p>Mark Attendance</p>
-                    </div>
-                    <div class="card">
-                        <a href="{% url 'face_attendance:emp_attendance_list' %}"><i class="fas fa-list"></i></a>
-                        <p>View Attendance</p>
-                    </div>
+{% block page_title %}Trang Chủ{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/style-index.css' %}">
+<style>
+    .dashboard-stats {
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        padding: 1.5rem;
+        height: 100%;
+        transition: all 0.3s;
+        border-left: 4px solid var(--primary-color);
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    }
+    
+    .stat-icon {
+        font-size: 2rem;
+        color: var(--primary-color);
+        margin-bottom: 0.75rem;
+    }
+    
+    .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    
+    .feature-section {
+        margin-top: 2rem;
+    }
+    
+    .feature-card {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        padding: 1.5rem;
+        height: 100%;
+        transition: all 0.3s;
+        margin-bottom: 1.5rem;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    }
+    
+    .feature-icon {
+        font-size: 1.75rem;
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.1), rgba(78, 115, 223, 0.2));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1.25rem;
+        color: var(--primary-color);
+    }
+    
+    .feature-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        color: #343a40;
+    }
+    
+    .feature-description {
+        color: #6c757d;
+        flex-grow: 1;
+        margin-bottom: 1rem;
+    }
+    
+    .welcome-message {
+        background: linear-gradient(135deg, var(--primary-color), #3a58ca);
+        color: white;
+        border-radius: 10px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .welcome-title {
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
+    
+    .welcome-subtitle {
+        opacity: 0.9;
+        margin-bottom: 1.5rem;
+    }
+    
+    .quick-action {
+        margin-top: 1rem;
+    }
+    
+    .quick-action .btn {
+        padding: 0.5rem 1.25rem;
+        border-radius: 50px;
+        transition: all 0.3s;
+    }
+    
+    .quick-action .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    @media (max-width: 768px) {
+        .stat-card {
+            margin-bottom: 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Welcome Message -->
+    <div class="welcome-message">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h2 class="welcome-title">Chào mừng đến với Hệ thống Điểm danh Khuôn mặt</h2>
+                <p class="welcome-subtitle">Hệ thống quản lý điểm danh thông minh sử dụng công nghệ nhận diện khuôn mặt, giúp nâng cao hiệu quả quản lý nhân sự và tính chính xác trong việc chấm công.</p>
+                
+                <div class="quick-action">
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'face_attendance:mark_attendance' %}" class="btn btn-light me-2">
+                            <i class="fas fa-camera me-2"></i> Điểm Danh Ngay
+                        </a>
+                        <a href="{% url 'face_attendance:register_face' %}" class="btn btn-outline-light">
+                            <i class="fas fa-user-plus me-2"></i> Đăng Ký Khuôn Mặt
+                        </a>
+                    {% else %}
+                        <a href="{% url 'face_attendance:login' %}" class="btn btn-light">
+                            <i class="fas fa-sign-in-alt me-2"></i> Đăng Nhập
+                        </a>
+                    {% endif %}
                 </div>
             </div>
-            <!-- <div class="dashboard-footer">
-                <p>Developed by</p>
-                <p>2025</p>
-            </div> -->
+            <div class="col-md-4 d-none d-md-block text-center">
+                <i class="fas fa-user-check" style="font-size: 8rem; opacity: 0.8;"></i>
+            </div>
         </div>
     </div>
+    
+    <!-- Dashboard Stats -->
+    <div class="dashboard-stats">
+        <div class="row g-3">
+            <div class="col-md-3 col-sm-6">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-value">{{ employee_count|default:'0' }}</div>
+                    <div class="stat-label">Tổng số nhân viên</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-value">{{ today_attendance_count|default:'0' }}</div>
+                    <div class="stat-label">Điểm danh hôm nay</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <div class="stat-value">{{ yesterday_attendance_count|default:'0' }}</div>
+                    <div class="stat-label">Điểm danh hôm qua</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <div class="stat-value">{{ month_attendance_count|default:'0' }}</div>
+                    <div class="stat-label">Điểm danh tháng này</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Features Section -->
+    <h4 class="mb-3 text-muted"><i class="fas fa-th-large me-2"></i>Chức năng hệ thống</h4>
+    
+    <div class="feature-section">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-camera"></i>
+                    </div>
+                    <h5 class="feature-title">Điểm Danh Tự Động</h5>
+                    <p class="feature-description">Sử dụng công nghệ nhận diện khuôn mặt để điểm danh nhanh chóng, chính xác và hiệu quả.</p>
+                    <a href="{% url 'face_attendance:mark_attendance' %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-arrow-right me-1"></i> Điểm Danh
+                    </a>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-user-plus"></i>
+                    </div>
+                    <h5 class="feature-title">Đăng Ký Khuôn Mặt</h5>
+                    <p class="feature-description">Thêm nhân viên mới vào hệ thống bằng cách đăng ký khuôn mặt qua camera.</p>
+                    <a href="{% url 'face_attendance:register_face' %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-arrow-right me-1"></i> Đăng Ký
+                    </a>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-list"></i>
+                    </div>
+                    <h5 class="feature-title">Danh Sách Điểm Danh</h5>
+                    <p class="feature-description">Xem lịch sử điểm danh của tất cả nhân viên, lọc theo ngày, tuần hoặc tháng.</p>
+                    <a href="{% url 'face_attendance:emp_attendance_list' %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-arrow-right me-1"></i> Xem Danh Sách
+                    </a>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h5 class="feature-title">Quản Lý Nhân Viên</h5>
+                    <p class="feature-description">Quản lý thông tin cá nhân và hồ sơ của tất cả nhân viên trong hệ thống.</p>
+                    <a href="{% url 'face_attendance:employee_list' %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-arrow-right me-1"></i> Quản Lý
+                    </a>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <h5 class="feature-title">Tính Ngày Công</h5>
+                    <p class="feature-description">Tự động tính toán ngày công dựa trên dữ liệu điểm danh của nhân viên.</p>
+                    <a href="{% url 'face_attendance:work_units_list' %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-arrow-right me-1"></i> Xem Công
+                    </a>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                    <h5 class="feature-title">Tính Lương</h5>
+                    <p class="feature-description">Tính toán lương cho nhân viên dựa trên số ngày công và mức lương cơ bản.</p>
+                    <a href="{% url 'face_attendance:salary_calculator' %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-arrow-right me-1"></i> Tính Lương
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
 
-    <script src="{% static 'js/index.js' %}"></script>
-</body>
-</html>
+{% block extra_js %}
+<script>
+    // Animation khi scroll trang
+    document.addEventListener('DOMContentLoaded', function() {
+        const cards = document.querySelectorAll('.stat-card, .feature-card');
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = 1;
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1 });
+        
+        cards.forEach(card => {
+            card.style.opacity = 0;
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'opacity 0.4s ease-out, transform 0.4s ease-out';
+            observer.observe(card);
+        });
+    });
+</script>
+{% endblock %}

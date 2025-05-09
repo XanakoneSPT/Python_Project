@@ -2,6 +2,7 @@ from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import User
 import json
+from decimal import Decimal
 
 class Department(models.Model):
     name = models.CharField(max_length=100)
@@ -22,9 +23,23 @@ class Employee(models.Model):
     date_hired = models.DateField()
     is_active = models.BooleanField(default=True)
     profile_image = models.ImageField(upload_to='employee_profiles/', null=True, blank=True)
+    daily_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Mức lương theo ngày công")
     
     def __str__(self):
         return f"{self.first_name} {self.last_name} ({self.employee_id})"
+        
+    def calculate_total_work_units(self, start_date, end_date):
+        """Tính tổng số công trong khoảng thời gian"""
+        records = AttendanceRecord.objects.filter(
+            employee=self,
+            date__range=(start_date, end_date)
+        )
+        return sum(record.work_units for record in records)
+    
+    def calculate_salary(self, start_date, end_date):
+        """Tính lương dựa trên số công và mức lương ngày công"""
+        total_work_units = self.calculate_total_work_units(start_date, end_date)
+        return total_work_units * self.daily_rate
 
 class FaceEncoding(models.Model):
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='face_encodings')
@@ -74,6 +89,7 @@ class AttendanceRecord(models.Model):
     shift = models.ForeignKey(Shift, on_delete=models.SET_NULL, null=True, blank=True)
     notes = models.TextField(blank=True, null=True)
     hours_worked = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    work_units = models.DecimalField(max_digits=5, decimal_places=2, default=0, help_text="Đơn vị công (1 công = 8 giờ)")
     
     class Meta:
         unique_together = ['employee', 'date']
@@ -85,6 +101,8 @@ class AttendanceRecord(models.Model):
         if self.check_in_time and self.check_out_time:
             duration = self.check_out_time - self.check_in_time
             self.hours_worked = round(duration.total_seconds() / 3600, 2)
+            # Tính công dựa trên số giờ làm việc (1 công = 8 giờ)
+            self.work_units = round(self.hours_worked / 8, 2)
             self.save()
 
     @property
@@ -121,6 +139,11 @@ class PayPeriod(models.Model):
     
     def __str__(self):
         return f"Pay period {self.start_date} to {self.end_date}"
+    
+    def get_total_days(self):
+        """Tính tổng số ngày trong kỳ lương"""
+        delta = self.end_date - self.start_date
+        return delta.days + 1
 
 class Payroll(models.Model):
     STATUS_CHOICES = (
@@ -133,6 +156,7 @@ class Payroll(models.Model):
     pay_period = models.ForeignKey(PayPeriod, on_delete=models.CASCADE)
     regular_hours = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     overtime_hours = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_work_units = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Tổng số công")
     gross_pay = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     deductions = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     net_pay = models.DecimalField(max_digits=10, decimal_places=2, default=0)
@@ -142,41 +166,22 @@ class Payroll(models.Model):
         return f"Payroll for {self.employee.first_name} {self.employee.last_name} - {self.pay_period}"
     
     def calculate_pay(self):
-        """Calculate pay based on attendance records within the pay period"""
-        attendance_records = AttendanceRecord.objects.filter(
-            employee=self.employee,
-            date__range=(self.pay_period.start_date, self.pay_period.end_date)
+        """Tính lương dựa trên số công và mức lương ngày công"""
+        # Tính tổng số công
+        self.total_work_units = self.employee.calculate_total_work_units(
+            self.pay_period.start_date, 
+            self.pay_period.end_date
         )
         
-        total_hours = 0
-        for record in attendance_records:
-            if record.check_in_time and record.check_out_time:
-                # Calculate hours worked
-                duration = record.check_out_time - record.check_in_time
-                hours = duration.total_seconds() / 3600
-                total_hours += hours
+        # Tính lương gộp
+        self.gross_pay = self.total_work_units * self.employee.daily_rate
         
-        # Get employee's hourly rate
-        hourly_rate = self.employee.pay_info.pay_rate.hourly_rate
+        # Khấu trừ (giả định 20% thuế và bảo hiểm)
+        self.deductions = self.gross_pay * Decimal('0.2')
         
-        # Calculate standard hours (assuming 8 hours per day)
-        standard_hours = 8 * 5  # 40 hours per week
-        
-        if total_hours <= standard_hours:
-            self.regular_hours = total_hours
-            self.overtime_hours = 0
-        else:
-            self.regular_hours = standard_hours
-            self.overtime_hours = total_hours - standard_hours
-        
-        # Calculate pay
-        overtime_rate = self.employee.pay_info.pay_rate.overtime_rate
-        self.gross_pay = (self.regular_hours * hourly_rate) + (self.overtime_hours * overtime_rate)
-        
-        # Deductions would typically be calculated here
-        self.deductions = self.gross_pay * 0.2  # Placeholder for tax/deductions
-        
+        # Lương thực nhận
         self.net_pay = self.gross_pay - self.deductions
+        
         self.save()
 
 class CameraConfiguration(models.Model):

@@ -24,6 +24,7 @@ import json
 from django.http import JsonResponse
 from django.utils import timezone
 import csv
+from decimal import Decimal  # Import Decimal for handling currency calculations
 
 
 @login_required
@@ -46,9 +47,19 @@ def mark_attendance(request):
     
     if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         try:
-            # Get image data from the request
-            data = json.loads(request.body)
-            image_data = data.get('image_data')
+            # Handle JSON data from request
+            if request.content_type == 'application/json':
+                data = json.loads(request.body)
+                image_data = data.get('image_data', '')
+            else:
+                # Handle form data (for backward compatibility)
+                image_data = request.POST.get('image_data', '')
+                if not image_data:
+                    body_unicode = request.body.decode('utf-8')
+                    if 'image_data=' in body_unicode:
+                        # Handle urlencoded data
+                        from urllib.parse import unquote
+                        image_data = unquote(body_unicode.split('image_data=')[1])
             
             if not image_data:
                 return JsonResponse({'success': False, 'message': 'No image data received'})
@@ -67,11 +78,32 @@ def mark_attendance(request):
             # Convert BGR to RGB for face_recognition
             rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             
-            # Detect faces in the image
-            face_locations = face_recognition.face_locations(rgb_img)
+            # Detect faces in the image with improved parameters
+            # Try with both HOG (faster) and CNN (more accurate) models and different scales
+            face_locations = face_recognition.face_locations(rgb_img, model="hog")
+            
+            # If no face is detected with HOG, try again with CNN model which is more accurate but slower
+            if not face_locations:
+                try:
+                    face_locations = face_recognition.face_locations(rgb_img, model="cnn")
+                except:
+                    # If CNN model fails (possibly not installed with GPU support), try HOG with different parameters
+                    # Apply some preprocessing to enhance face detection
+                    # Resize image to improve detection of different sized faces
+                    small_frame = cv2.resize(rgb_img, (0, 0), fx=0.5, fy=0.5)
+                    face_locations = face_recognition.face_locations(small_frame)
+                    # Convert face locations back to original image size
+                    if face_locations:
+                        face_locations = [(top*2, right*2, bottom*2, left*2) for top, right, bottom, left in face_locations]
+            
+            # If still no face detected, try one more time with basic parameters but larger detection window
+            if not face_locations:
+                # Last attempt with adjusted brightness/contrast
+                img_enhanced = cv2.convertScaleAbs(rgb_img, alpha=1.2, beta=10)  # Increase brightness
+                face_locations = face_recognition.face_locations(img_enhanced)
             
             if not face_locations:
-                return JsonResponse({'success': False, 'message': 'No face detected in the image. Please try again.'})
+                return JsonResponse({'success': False, 'message': 'No face detected in the image. Please try again with better lighting and position your face clearly in the frame.'})
             
             # Get face encodings
             face_encodings = face_recognition.face_encodings(rgb_img, face_locations)
@@ -143,9 +175,13 @@ def mark_attendance(request):
                 })
                 
         except Exception as e:
+            import traceback
+            print(f"Error in mark_attendance: {str(e)}")
+            print(traceback.format_exc())
             return JsonResponse({'success': False, 'message': f'Error: {str(e)}'})
     
     return render(request, 'face_attendance/mark_attendance.html', context)
+
 
 def index(request):
     """Landing page view"""
@@ -184,7 +220,7 @@ def emp_attendance_list(request):
 
     # CSV Export logic
     if download == 'true':
-        response = HttpResponse(content_type='text/csv')
+        response = HttpResponse(content_type='text/csv', charset='utf-8-sig')
         response['Content-Disposition'] = f'attachment; filename={today} attendance_report.csv'
 
         writer = csv.writer(response)
@@ -442,7 +478,7 @@ def emp_delete(request, employee_id):
     if request.method == 'POST':
         emp.delete()
         messages.success(request, 'Employee deleted successfully.')
-        return redirect('face_attendance/employee_list')  # Redirect to the student list after deletion
+        return redirect('face_attendance:employee_list')
     
     return render(request, 'face_attendance/emp_delete_confirm.html', {'emp': emp})
 
@@ -498,80 +534,239 @@ def payroll_detail(request, payroll_id):
     
     return render(request, 'face_attendance/payroll_detail.html', context)
 
-# @login_required
-# def camera_config_create(request):
-#     # Check if the request method is POST, indicating form submission
-#     if request.method == "POST":
-#         # Retrieve form data from the request
-#         name = request.POST.get('name')
-#         camera_source = request.POST.get('camera_source')
-#         threshold = request.POST.get('threshold')
 
-#         try:
-#             # Save the data to the database using the CameraConfiguration model
-#             CameraConfiguration.objects.create(
-#                 name=name,
-#                 camera_source=camera_source,
-#                 threshold=threshold,
-#             )
-#             # Redirect to the list of camera configurations after successful creation
-#             return redirect('camera_config_list')
+@login_required
+def work_units_list(request):
+    """Hiển thị danh sách ngày công của tất cả nhân viên"""
+    try:
+        search_query = request.GET.get('search', '')
+        date_from = request.GET.get('date_from', '')
+        date_to = request.GET.get('date_to', '')
+        
+        # Mặc định hiển thị dữ liệu của tháng hiện tại
+        today = timezone.now().date()
+        if not date_from:
+            date_from = today.replace(day=1).strftime('%Y-%m-%d')  # Ngày đầu tiên của tháng
+        if not date_to:
+            date_to = today.strftime('%Y-%m-%d')  # Ngày hiện tại
+            
+        employees = Employee.objects.filter(is_active=True)
+        
+        if search_query:
+            employees = employees.filter(
+                first_name__icontains=search_query) | employees.filter(
+                last_name__icontains=search_query) | employees.filter(
+                employee_id__icontains=search_query
+            )
+        
+        # Lấy thông tin ngày công cho mỗi nhân viên
+        employee_work_data = []
+        for employee in employees:
+            records = AttendanceRecord.objects.filter(
+                employee=employee,
+                date__range=[date_from, date_to]
+            )
+            
+            total_hours = sum(record.hours_worked or 0 for record in records)
+            total_work_units = sum(record.work_units or 0 for record in records)
+            
+            # Chuyển đổi sang cùng kiểu dữ liệu trước khi thực hiện phép nhân
+            daily_rate = Decimal(str(employee.daily_rate)) if employee.daily_rate else Decimal('0')
+            total_work_units = Decimal(str(total_work_units)) if total_work_units else Decimal('0')
+            estimated_salary = daily_rate * total_work_units
+            
+            employee_work_data.append({
+                'employee': employee,
+                'total_hours': round(total_hours, 2),
+                'total_work_units': round(total_work_units, 2),
+                'estimated_salary': round(estimated_salary, 2)
+            })
+        
+        # Sắp xếp theo số ngày công giảm dần
+        employee_work_data.sort(key=lambda x: x['total_work_units'], reverse=True)
+        
+        context = {
+            'employee_work_data': employee_work_data,
+            'search_query': search_query,
+            'date_from': date_from,
+            'date_to': date_to,
+        }
+        
+        if request.GET.get('download_report') == 'true':
+            response = HttpResponse(content_type='text/csv', charset='utf-8-sig')
+            response['Content-Disposition'] = f'attachment; filename=work_units_report_{date_from}_to_{date_to}.csv'
+            
+            writer = csv.writer(response)
+            writer.writerow([
+                'Mã NV', 'Tên Nhân Viên', 'Phòng Ban', 'Tổng Giờ Làm Việc', 
+                'Tổng Công', 'Mức Lương Ngày', 'Lương Dự Kiến'
+            ])
+            
+            for data in employee_work_data:
+                writer.writerow([
+                    data['employee'].employee_id,
+                    f"{data['employee'].first_name} {data['employee'].last_name}",
+                    data['employee'].department.name if data['employee'].department else 'N/A',
+                    data['total_hours'],
+                    data['total_work_units'],
+                    float(data['employee'].daily_rate) if data['employee'].daily_rate else 0.0,
+                    data['estimated_salary']
+                ])
+            
+            return response
+        
+        return render(request, 'face_attendance/work_units_list.html', context)
+    except Exception as e:
+        messages.error(request, f"Lỗi khi hiển thị danh sách ngày công: {str(e)}")
+        return redirect('face_attendance:index')
 
-#         except IntegrityError:
-#             # Handle the case where a configuration with the same name already exists
-#             messages.error(request, "A configuration with this name already exists.")
-#             # Render the form again to allow user to correct the error
-#             return render(request, 'camera_config_form.html')
+@login_required
+def salary_calculator(request):
+    """Trang tính lương tổng hợp cho tất cả nhân viên"""
+    try:
+        date_from = request.GET.get('date_from', '')
+        date_to = request.GET.get('date_to', '')
+        
+        # Mặc định hiển thị dữ liệu của tháng hiện tại
+        today = timezone.now().date()
+        if not date_from:
+            date_from = today.replace(day=1).strftime('%Y-%m-%d')  # Ngày đầu tiên của tháng
+        if not date_to:
+            date_to = today.strftime('%Y-%m-%d')  # Ngày hiện tại
+        
+        employees = Employee.objects.filter(is_active=True)
+        
+        # Tính toán lương cho mỗi nhân viên
+        salary_data = []
+        total_salary = 0
+        
+        for employee in employees:
+            records = AttendanceRecord.objects.filter(
+                employee=employee,
+                date__range=[date_from, date_to]
+            )
+            
+            total_work_units = sum(record.work_units or 0 for record in records)
+            
+            # Chuyển đổi sang cùng kiểu dữ liệu trước khi thực hiện phép nhân
+            daily_rate = Decimal(str(employee.daily_rate)) if employee.daily_rate else Decimal('0')
+            total_work_units_float = Decimal(str(total_work_units)) if total_work_units else Decimal('0')
+            
+            salary = daily_rate * total_work_units_float
+            deductions = salary * Decimal('0.2')  # Khấu trừ 20% (thuế + bảo hiểm)
+            net_salary = salary - deductions
+            
+            salary_data.append({
+                'employee': employee,
+                'total_work_units': round(total_work_units_float, 2),
+                'salary': round(salary, 2),
+                'deductions': round(deductions, 2),
+                'net_salary': round(net_salary, 2)
+            })
+            
+            total_salary += net_salary
+        
+        # Sắp xếp theo lương giảm dần
+        salary_data.sort(key=lambda x: x['net_salary'], reverse=True)
+        
+        context = {
+            'salary_data': salary_data,
+            'date_from': date_from,
+            'date_to': date_to,
+            'total_salary': round(total_salary, 2)
+        }
+        
+        if request.GET.get('download_report') == 'true':
+            response = HttpResponse(content_type='text/csv', charset='utf-8-sig')
+            response['Content-Disposition'] = f'attachment; filename=salary_report_{date_from}_to_{date_to}.csv'
+            
+            writer = csv.writer(response)
+            writer.writerow([
+                'Mã NV', 'Tên Nhân Viên', 'Phòng Ban', 'Tổng Công', 
+                'Lương Gộp', 'Khấu Trừ', 'Lương Thực Nhận'
+            ])
+            
+            for data in salary_data:
+                writer.writerow([
+                    data['employee'].employee_id,
+                    f"{data['employee'].first_name} {data['employee'].last_name}",
+                    data['employee'].department.name if data['employee'].department else 'N/A',
+                    data['total_work_units'],
+                    data['salary'],
+                    data['deductions'],
+                    data['net_salary']
+                ])
+            
+            return response
+        
+        return render(request, 'face_attendance/salary_calculator.html', context)
+    except Exception as e:
+        messages.error(request, f"Lỗi khi tính toán lương: {str(e)}")
+        return redirect('face_attendance:index')
 
-#     # Render the camera configuration form for GET requests
-#     return render(request, 'face_attendance/camera_config_form.html')
-
-
-# # READ: Function to list all camera configurations
-# @login_required
-# def camera_config_list(request):
-#     # Retrieve all CameraConfiguration objects from the database
-#     configs = CameraConfiguration.objects.all()
-#     # Render the list template with the retrieved configurations
-#     return render(request, 'face_attendance/camera_config_list.html', {'configs': configs})
-
-
-# # UPDATE: Function to edit an existing camera configuration
-# @login_required
-# def camera_config_update(request, pk):
-#     # Retrieve the specific configuration by primary key or return a 404 error if not found
-#     config = get_object_or_404(CameraConfiguration, pk=pk)
-
-#     # Check if the request method is POST, indicating form submission
-#     if request.method == "POST":
-#         # Update the configuration fields with data from the form
-#         config.name = request.POST.get('name')
-#         config.camera_source = request.POST.get('camera_source')
-#         config.threshold = request.POST.get('threshold')
-#         config.success_sound_path = request.POST.get('success_sound_path')
-
-#         # Save the changes to the database
-#         config.save()  
-
-#         # Redirect to the list page after successful update
-#         return redirect('camera_config_list')  
+@login_required
+def employee_salary(request, employee_id):
+    """Hiển thị chi tiết tính lương cho nhân viên cụ thể"""
+    employee = get_object_or_404(Employee, employee_id=employee_id)
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
     
-#     # Render the configuration form with the current configuration data for GET requests
-#     return render(request, 'face_attendance/camera_config_form.html', {'config': config})
+    # Mặc định hiển thị dữ liệu của tháng hiện tại
+    today = timezone.now().date()
+    if not date_from:
+        date_from = today.replace(day=1).strftime('%Y-%m-%d')  # Ngày đầu tiên của tháng
+    if not date_to:
+        date_to = today.strftime('%Y-%m-%d')  # Ngày hiện tại
+    
+    # Lấy các bản ghi chấm công
+    attendance_records = AttendanceRecord.objects.filter(
+        employee=employee,
+        date__range=[date_from, date_to]
+    ).order_by('date')
+    
+    # Tính tổng số công và lương
+    total_hours = sum(record.hours_worked for record in attendance_records)
+    total_work_units = sum(record.work_units for record in attendance_records)
+    
+    salary = total_work_units * employee.daily_rate
+    deductions = salary * Decimal('0.2')  # Khấu trừ 20% (thuế + bảo hiểm) - Convert float to Decimal
+    net_salary = salary - deductions
+    
+    context = {
+        'employee': employee,
+        'attendance_records': attendance_records,
+        'total_hours': round(total_hours, 2),
+        'total_work_units': round(total_work_units, 2),
+        'salary': round(salary, 2),
+        'deductions': round(deductions, 2),
+        'net_salary': round(net_salary, 2),
+        'date_from': date_from,
+        'date_to': date_to,
+    }
+    
+    return render(request, 'face_attendance/employee_salary.html', context)
 
-
-# # DELETE: Function to delete a camera configuration
-# @login_required
-# def camera_config_delete(request, pk):
-#     # Retrieve the specific configuration by primary key or return a 404 error if not found
-#     config = get_object_or_404(CameraConfiguration, pk=pk)
-
-#     # Check if the request method is POST, indicating confirmation of deletion
-#     if request.method == "POST":
-#         # Delete the record from the database
-#         config.delete()  
-#         # Redirect to the list of camera configurations after deletion
-#         return redirect('camera_config_list')
-
-#     # Render the delete confirmation template with the configuration data
-#     return render(request, 'face_attendance/camera_config_delete.html', {'config': config})
+@login_required
+def update_daily_rate(request, employee_id):
+    """Cập nhật mức lương ngày công cho nhân viên"""
+    employee = get_object_or_404(Employee, employee_id=employee_id)
+    
+    if request.method == 'POST':
+        try:
+            daily_rate = request.POST.get('daily_rate')
+            if daily_rate:
+                employee.daily_rate = float(daily_rate)
+                employee.save()
+                messages.success(request, f'Cập nhật mức lương thành công cho {employee.first_name} {employee.last_name}')
+            else:
+                messages.error(request, 'Vui lòng nhập mức lương hợp lệ')
+        except ValueError:
+            messages.error(request, 'Mức lương không hợp lệ. Vui lòng nhập số.')
+            
+        return redirect('face_attendance:employee_salary', employee_id=employee.employee_id)
+    
+    context = {
+        'employee': employee
+    }
+    
+    return render(request, 'face_attendance/update_daily_rate.html', context)

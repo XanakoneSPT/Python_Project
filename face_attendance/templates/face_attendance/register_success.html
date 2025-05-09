@@ -1,117 +1,203 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registration Success</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        :root {
-            --bg-primary: #0f1229;
-            --bg-secondary: #1a1f3d;
-            --accent-color: #4ecdc4;
-            --text-primary: #ffffff;
-            --text-secondary: #b0b7c6;
-            --card-bg: rgba(255, 255, 255, 0.05);
-        }
+{% extends 'face_attendance/base.html' %}
+{% load static %}
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+{% block title %}Đăng Ký Thành Công | Hệ Thống Điểm Danh Khuôn Mặt{% endblock %}
 
-        body {
-            font-family: 'Inter', 'Arial', sans-serif;
-            background-color: var(--bg-primary);
-            color: var(--text-primary);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px;
-        }
+{% block page_title %}{% endblock %}
 
-        .container {
-            width: 100%;
-            max-width: 500px;
+{% block extra_css %}
+<style>
+    .success-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 70vh;
+        padding: 2rem 0;
+    }
+    
+    .success-card {
+        background-color: white;
+        border-radius: 1rem;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+        padding: 3rem;
+        text-align: center;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        max-width: 600px;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .success-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 2rem 0 rgba(58, 59, 69, 0.2);
+    }
+    
+    .success-icon {
+        width: 120px;
+        height: 120px;
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3.5rem;
+        margin: 0 auto 2rem;
+        box-shadow: 0 0.5rem 1.5rem rgba(28, 200, 138, 0.3);
+    }
+    
+    .card-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 1rem;
+    }
+    
+    .card-subtitle {
+        font-size: 1.25rem;
+        color: #6c757d;
+        margin-bottom: 2rem;
+    }
+    
+    .back-home {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.75rem 1.5rem;
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white;
+        font-size: 1rem;
+        font-weight: 600;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        box-shadow: 0 0.25rem 0.75rem rgba(78, 115, 223, 0.3);
+    }
+    
+    .back-home:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 0.5rem 1rem rgba(78, 115, 223, 0.4);
+    }
+    
+    .back-home i {
+        margin-right: 0.5rem;
+    }
+    
+    .success-message {
+        background-color: rgba(28, 200, 138, 0.1);
+        border-left: 4px solid var(--secondary-color);
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin: 2rem 0;
+        text-align: left;
+    }
+    
+    .success-message p {
+        margin-bottom: 0.5rem;
+        color: #333;
+    }
+    
+    .success-message strong {
+        color: var(--secondary-color);
+    }
+    
+    .next-steps {
+        margin-top: 2rem;
+        text-align: left;
+    }
+    
+    .next-steps h4 {
+        color: #333;
+        margin-bottom: 1rem;
+        font-weight: 600;
+    }
+    
+    .step-item {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+    }
+    
+    .step-number {
+        width: 30px;
+        height: 30px;
+        background: var(--primary-color);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        margin-right: 0.75rem;
+        flex-shrink: 0;
+    }
+    
+    .step-text {
+        flex-grow: 1;
+        color: #495057;
+    }
+    
+    @media (max-width: 576px) {
+        .success-card {
+            padding: 2rem 1.5rem;
         }
-
-        .card {
-            background-color: var(--bg-secondary);
-            border-radius: 15px;
-            padding: 40px;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(78, 205, 196, 0.1);
+        
+        .success-icon {
+            width: 90px;
+            height: 90px;
+            font-size: 2.5rem;
         }
-
+        
         .card-title {
-            font-size: 2rem;
-            color: var(--accent-color);
-            margin-bottom: 15px;
+            font-size: 1.5rem;
         }
-
+        
         .card-subtitle {
-            font-size: 1.3rem;
-            color: var(--text-secondary);
-            margin-bottom: 25px;
-        }
-
-        .back-home {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 12px 20px;
-            background-color: var(--accent-color);
-            color: var(--bg-primary);
             font-size: 1rem;
-            font-weight: bold;
-            border-radius: 10px;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            cursor: pointer;
         }
+    }
+</style>
+{% endblock %}
 
-        .back-home:hover {
-            background-color: #3bb9b3;
-            transform: translateY(-2px);
-        }
-
-        .back-home i {
-            margin-right: 10px;
-        }
-
-        @media (max-width: 576px) {
-            .card {
-                padding: 25px;
-            }
-
-            .card-title {
-                font-size: 1.5rem;
-            }
-
-            .card-subtitle {
-                font-size: 1rem;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="card">
-            <h2 class="card-title">Registered Successfully!</h2>
-            <h3 class="card-subtitle">Please Wait For Admin Approval</h3>
-            <div class="back-home" onclick="location.href='{% url 'face_attendance:index' %}'">
-                <i class="fas fa-home"></i> Back to Home
+{% block content %}
+<div class="success-container">
+    <div class="success-card">
+        <div class="success-icon">
+            <i class="fas fa-check"></i>
+        </div>
+        
+        <h2 class="card-title">Đăng Ký Thành Công!</h2>
+        <h3 class="card-subtitle">Vui Lòng Chờ Quản Trị Viên Phê Duyệt</h3>
+        
+        <div class="success-message">
+            <p><strong>Khuôn mặt của bạn đã được đăng ký thành công trong hệ thống.</strong></p>
+            <p>Để bảo đảm tính chính xác, dữ liệu sẽ được quản trị viên xem xét trước khi kích hoạt.</p>
+        </div>
+        
+        <div class="next-steps">
+            <h4><i class="fas fa-clipboard-list me-2"></i>Các bước tiếp theo:</h4>
+            
+            <div class="step-item">
+                <div class="step-number">1</div>
+                <div class="step-text">Quản trị viên sẽ xem xét thông tin đăng ký của bạn</div>
+            </div>
+            
+            <div class="step-item">
+                <div class="step-number">2</div>
+                <div class="step-text">Bạn sẽ nhận được thông báo khi đăng ký được phê duyệt</div>
+            </div>
+            
+            <div class="step-item">
+                <div class="step-number">3</div>
+                <div class="step-text">Khuôn mặt của bạn sẽ có thể được sử dụng để điểm danh</div>
             </div>
         </div>
+        
+        <div class="mt-4">
+            <a href="{% url 'face_attendance:index' %}" class="back-home">
+                <i class="fas fa-home"></i> Quay Lại Trang Chủ
+            </a>
+        </div>
     </div>
-    
-    <!-- Bootstrap JS and dependencies -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+</div>
+{% endblock %}

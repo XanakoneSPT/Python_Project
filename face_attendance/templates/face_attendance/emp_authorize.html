@@ -1,175 +1,310 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Authorize Employee</title>
-    <style>
-        :root {
-            --bg-primary: #0f1229;
-            --bg-secondary: #1a1f3d;
-            --accent-color: #4ecdc4;
-            --accent-hover: #3ab3ac;
-            --text-primary: #ffffff;
-            --text-secondary: #b0b7c6;
-            --card-bg: rgba(255, 255, 255, 0.05);
-        }
+{% extends 'face_attendance/base.html' %}
+{% load static %}
 
-        body {
-            font-family: 'Inter', Arial, sans-serif;
-            background-color: var(--bg-primary);
-            color: var(--text-primary);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
+{% block title %}Phê Duyệt Nhân Viên | Hệ Thống Điểm Danh Khuôn Mặt{% endblock %}
 
-        .container {
-            background-color: var(--bg-secondary);
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-            width: 420px;
-            text-align: center;
-        }
+{% block page_title %}Phê Duyệt Nhân Viên{% endblock %}
 
-        h1 {
-            color: var(--accent-color);
-            margin-bottom: 20px;
-            font-size: 22px;
-        }
-
-        .employee-details {
-            text-align: left;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            padding-top: 20px;
-            margin-bottom: 20px;
-        }
-
+{% block extra_css %}
+<style>
+    .authorize-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 2rem 0;
+    }
+    
+    .authorize-card {
+        background-color: white;
+        border-radius: 1rem;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+        overflow: hidden;
+        max-width: 600px;
+        width: 100%;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .authorize-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 2rem 0 rgba(58, 59, 69, 0.2);
+    }
+    
+    .card-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white;
+        padding: 1.5rem;
+        text-align: center;
+        position: relative;
+    }
+    
+    .card-header h1 {
+        margin: 0;
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: white;
+    }
+    
+    .card-body {
+        padding: 2rem;
+    }
+    
+    .employee-details {
+        background-color: #f8f9fc;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .detail {
+        display: flex;
+        margin-bottom: 0.75rem;
+    }
+    
+    .detail-label {
+        flex: 0 0 30%;
+        font-weight: 600;
+        color: #5a5c69;
+    }
+    
+    .detail-value {
+        flex: 0 0 70%;
+        color: #6e707e;
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 0.35rem 0.75rem;
+        border-radius: 2rem;
+        font-weight: 600;
+        font-size: 0.8rem;
+    }
+    
+    .status-active {
+        background-color: rgba(28, 200, 138, 0.1);
+        color: #1cc88a;
+        border: 1px solid rgba(28, 200, 138, 0.2);
+    }
+    
+    .status-inactive {
+        background-color: rgba(231, 74, 59, 0.1);
+        color: #e74a3b;
+        border: 1px solid rgba(231, 74, 59, 0.2);
+    }
+    
+    .form-group {
+        margin: 1.5rem 0;
+        text-align: center;
+    }
+    
+    .custom-switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
+    }
+    
+    .custom-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    
+    .switch-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+        border-radius: 34px;
+    }
+    
+    .switch-slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+    }
+    
+    input:checked + .switch-slider {
+        background-color: var(--secondary-color);
+    }
+    
+    input:focus + .switch-slider {
+        box-shadow: 0 0 1px var(--secondary-color);
+    }
+    
+    input:checked + .switch-slider:before {
+        transform: translateX(26px);
+    }
+    
+    .switch-label {
+        margin-left: 10px;
+        font-weight: 600;
+        color: #5a5c69;
+    }
+    
+    .authorize-btn {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        cursor: pointer;
+        border-radius: 0.5rem;
+        transition: all 0.3s ease;
+        width: 100%;
+        box-shadow: 0 0.125rem 0.25rem rgba(58, 59, 69, 0.2);
+    }
+    
+    .authorize-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 0.5rem 1rem rgba(58, 59, 69, 0.3);
+    }
+    
+    .authorize-btn:active {
+        transform: translateY(-1px);
+    }
+    
+    .actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 1.5rem;
+    }
+    
+    .action-link {
+        color: var(--primary-color);
+        text-decoration: none;
+        padding: 0.5rem;
+        transition: all 0.3s ease;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+    }
+    
+    .action-link i {
+        margin-right: 0.5rem;
+    }
+    
+    .action-link:hover {
+        color: var(--secondary-color);
+        transform: translateX(-5px);
+    }
+    
+    .action-link:last-child:hover {
+        transform: translateX(5px);
+    }
+    
+    @media (max-width: 576px) {
         .detail {
-            margin-bottom: 10px;
-            color: var(--text-secondary);
+            flex-direction: column;
         }
+        
+        .detail-label {
+            margin-bottom: 0.25rem;
+        }
+    }
+</style>
+{% endblock %}
 
-        .form-group {
-            margin: 20px 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .custom-checkbox {
-            display: inline-flex;
-            align-items: center;
-            cursor: pointer;
-        }
-
-        .custom-checkbox input {
-            display: none;
-        }
-
-        .checkmark {
-            width: 24px;
-            height: 24px;
-            background-color: rgba(255,255,255,0.1);
-            border-radius: 4px;
-            margin-right: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background-color 0.3s ease;
-        }
-
-        .custom-checkbox:hover .checkmark {
-            background-color: rgba(255,255,255,0.2);
-        }
-
-        .custom-checkbox input:checked + .checkmark {
-            background-color: var(--accent-color);
-        }
-
-        .checkmark::after {
-            content: "\2714";
-            color: white;
-            font-size: 16px;
-            display: none;
-        }
-
-        .custom-checkbox input:checked + .checkmark::after {
-            display: block;
-        }
-
-        .authorize-btn {
-            background-color: var(--accent-color);
-            color: var(--bg-primary);
-            border: none;
-            padding: 12px 24px;
-            font-size: 16px;
-            font-weight: 600;
-            text-transform: uppercase;
-            cursor: pointer;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-        }
-
-        .authorize-btn:hover {
-            background-color: var(--accent-hover);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-        }
-
-        .authorize-btn:active {
-            transform: translateY(1px);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .actions {
-            margin-top: 20px;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .actions a {
-            color: var(--accent-color);
-            text-decoration: none;
-            padding: 10px;
-            transition: color 0.3s ease;
-        }
-
-        .actions a:hover {
-            color: var(--accent-hover);
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Authorize Employee</h1>
-        <div class="employee-details">
-            <div class="detail"><strong>ID:</strong> {{ emp.employee_id }}</div>
-            <div class="detail"><strong>Name:</strong> {{ emp.first_name }} {{ employee.last_name }}</div>
-            <div class="detail"><strong>Email:</strong> {{ emp.email }}</div>
-            <div class="detail"><strong>Phone:</strong> {{ emp.phone }}</div>
-            <div class="detail"><strong>Department:</strong> {{ emp.department.name }}</div>
-            <div class="detail"><strong>Position:</strong> {{ emp.position }}</div>
-            <div class="detail"><strong>Date Hired:</strong> {{ emp.date_hired }}</div>
-            <div class="detail"><strong>Active:</strong> {% if emp.is_active %} Yes {% else %} No {% endif %}</div>
+{% block content %}
+<div class="authorize-container">
+    <div class="authorize-card">
+        <div class="card-header">
+            <h1>
+                {% if emp.is_active %}
+                    <i class="fas fa-user-check me-2"></i> Vô Hiệu Hóa Nhân Viên
+                {% else %}
+                    <i class="fas fa-user-plus me-2"></i> Kích Hoạt Nhân Viên
+                {% endif %}
+            </h1>
         </div>
-        <form method="post">
-            {% csrf_token %}
-            <div class="form-group">
-                <label class="custom-checkbox">
-                    <input type="checkbox" id="authorized" name="authorized" {% if emp.is_active %} checked {% endif %}>
-                    <span class="checkmark"></span>Authorize Employee
-                </label>
+        
+        <div class="card-body">
+            <div class="employee-details">
+                <div class="detail">
+                    <div class="detail-label">Mã NV:</div>
+                    <div class="detail-value">{{ emp.employee_id }}</div>
+                </div>
+                <div class="detail">
+                    <div class="detail-label">Họ tên:</div>
+                    <div class="detail-value">{{ emp.first_name }} {{ emp.last_name }}</div>
+                </div>
+                <div class="detail">
+                    <div class="detail-label">Email:</div>
+                    <div class="detail-value">{{ emp.email }}</div>
+                </div>
+                <div class="detail">
+                    <div class="detail-label">Số điện thoại:</div>
+                    <div class="detail-value">{{ emp.phone }}</div>
+                </div>
+                <div class="detail">
+                    <div class="detail-label">Phòng ban:</div>
+                    <div class="detail-value">{{ emp.department.name }}</div>
+                </div>
+                <div class="detail">
+                    <div class="detail-label">Chức vụ:</div>
+                    <div class="detail-value">{{ emp.position }}</div>
+                </div>
+                <div class="detail">
+                    <div class="detail-label">Ngày tuyển dụng:</div>
+                    <div class="detail-value">{{ emp.date_hired }}</div>
+                </div>
+                <div class="detail">
+                    <div class="detail-label">Trạng thái:</div>
+                    <div class="detail-value">
+                        {% if emp.is_active %}
+                            <span class="status-badge status-active">Đang hoạt động</span>
+                        {% else %}
+                            <span class="status-badge status-inactive">Không hoạt động</span>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
-            <button type="submit" class="authorize-btn">Update Authorization</button>
-        </form>
-        <div class="actions">
-            <a href="{% url 'face_attendance:employee_list' %}">Back to List</a>
-            <a href="{% url 'face_attendance:employee_detail' employee_id=emp.employee_id %}">View Details</a>
+            
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label class="custom-switch">
+                        <input type="checkbox" id="authorized" name="authorized" {% if emp.is_active %} checked {% endif %}>
+                        <span class="switch-slider"></span>
+                    </label>
+                    <span class="switch-label">
+                        {% if emp.is_active %}
+                            Nhân viên đang hoạt động
+                        {% else %}
+                            Nhân viên không hoạt động
+                        {% endif %}
+                    </span>
+                </div>
+                <button type="submit" class="authorize-btn">
+                    {% if emp.is_active %}
+                        <i class="fas fa-user-times me-2"></i> Vô Hiệu Hóa Nhân Viên
+                    {% else %}
+                        <i class="fas fa-user-check me-2"></i> Kích Hoạt Nhân Viên
+                    {% endif %}
+                </button>
+            </form>
+            
+            <div class="actions">
+                <a href="{% url 'face_attendance:employee_list' %}" class="action-link">
+                    <i class="fas fa-arrow-left"></i> Quay Lại Danh Sách
+                </a>
+                <a href="{% url 'face_attendance:employee_detail' employee_id=emp.employee_id %}" class="action-link">
+                    Xem Chi Tiết <i class="fas fa-user"></i>
+                </a>
+            </div>
         </div>
     </div>
-</body>
-</html>
+</div>
+{% endblock %}

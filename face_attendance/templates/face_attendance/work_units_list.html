@@ -1,0 +1,339 @@
+{% extends 'face_attendance/base.html' %}
+{% load static %}
+
+{% block title %}Danh Sách Công Nhân Viên{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/style-work-units.css' %}">
+<style>
+    .page-header {
+        background: linear-gradient(135deg, #3a8ffe 0%, #0063cc 100%);
+        padding: 30px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        color: white;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .page-header::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image: url('{% static "images/pattern.svg" %}');
+        background-size: cover;
+        opacity: 0.1;
+    }
+    
+    .page-header-content {
+        position: relative;
+        z-index: 1;
+    }
+    
+    .filter-card {
+        background-color: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        padding: 25px;
+        margin-bottom: 30px;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .data-card {
+        background-color: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+        margin-bottom: 30px;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .data-card .card-header {
+        background-color: #f8f9fa;
+        padding: 15px 25px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .data-card .card-body {
+        padding: 0;
+    }
+    
+    .table {
+        margin-bottom: 0;
+    }
+    
+    .table th {
+        font-weight: 600;
+        background-color: #f8f9fa;
+        color: #495057;
+        border-top: none;
+        padding: 15px;
+    }
+    
+    .table td {
+        padding: 15px;
+        vertical-align: middle;
+    }
+    
+    .btn-action {
+        border-radius: 50px;
+        padding: 8px 15px;
+        font-weight: 500;
+        box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .btn-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15);
+    }
+    
+    .empty-state {
+        padding: 50px 20px;
+        text-align: center;
+        color: #6c757d;
+    }
+    
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 20px;
+        color: #dee2e6;
+    }
+    
+    .footer-link {
+        display: inline-block;
+        margin-top: 10px;
+        color: #495057;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .footer-link:hover {
+        color: #0d6efd;
+        transform: translateX(-5px);
+    }
+    
+    /* Input fields and buttons styling */
+    .form-control {
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+        padding: 10px 15px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus {
+        border-color: #3a8ffe;
+        box-shadow: 0 0 0 3px rgba(58, 143, 254, 0.15);
+    }
+    
+    .btn-filter {
+        border-radius: 10px;
+        padding: 10px 15px;
+        font-weight: 500;
+        background: linear-gradient(135deg, #3a8ffe 0%, #0063cc 100%);
+        border: none;
+        box-shadow: 0 3px 10px rgba(0, 99, 204, 0.2);
+        transition: all 0.3s ease;
+    }
+    
+    .btn-filter:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 99, 204, 0.3);
+    }
+    
+    .btn-export {
+        border-radius: 10px;
+        padding: 10px 20px;
+        font-weight: 500;
+        background: linear-gradient(135deg, #28a745 0%, #20913a 100%);
+        border: none;
+        box-shadow: 0 3px 10px rgba(40, 167, 69, 0.2);
+        transition: all 0.3s ease;
+    }
+    
+    .btn-export:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+    }
+    
+    .table tbody tr:hover {
+        background-color: rgba(13, 110, 253, 0.04);
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .page-header {
+            padding: 20px;
+        }
+        
+        .filter-card, .data-card {
+            padding: 15px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="page-header-content">
+            <h1 class="display-5 fw-bold mb-3">
+                <i class="fas fa-calculator me-2"></i> Danh Sách Công Nhân Viên
+            </h1>
+            <p class="lead mb-0">Quản lý và theo dõi ngày công của tất cả nhân viên</p>
+        </div>
+    </div>
+    
+    <!-- Filter Form -->
+    <div class="filter-card">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label for="search" class="form-label fw-medium">
+                    <i class="fas fa-search me-1"></i> Tìm kiếm nhân viên:
+                </label>
+                <input type="text" class="form-control" id="search" name="search" value="{{ search_query }}" placeholder="Nhập tên, mã NV...">
+            </div>
+            <div class="col-md-3">
+                <label for="date_from" class="form-label fw-medium">
+                    <i class="fas fa-calendar-alt me-1"></i> Từ ngày:
+                </label>
+                <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
+            </div>
+            <div class="col-md-3">
+                <label for="date_to" class="form-label fw-medium">
+                    <i class="fas fa-calendar-alt me-1"></i> Đến ngày:
+                </label>
+                <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary btn-filter w-100">
+                    <i class="fas fa-filter me-1"></i> Lọc
+                </button>
+            </div>
+        </form>
+        
+        <!-- Export button -->
+        <div class="mt-3 d-flex justify-content-between align-items-center">
+            <div>
+                <p class="mb-0 text-muted">
+                    <i class="fas fa-info-circle me-1"></i> Tổng số: <strong>{{ employee_work_data|length }}</strong> nhân viên
+                </p>
+            </div>
+            <div>
+                <a href="?{% if search_query %}search={{ search_query }}&{% endif %}date_from={{ date_from }}&date_to={{ date_to }}&download_report=true" 
+                   class="btn btn-success btn-export">
+                    <i class="fas fa-file-excel me-1"></i> Xuất Excel
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Work Units Table -->
+    <div class="data-card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-table me-1"></i> Danh sách ngày công
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th scope="col">Mã NV</th>
+                            <th scope="col">Nhân Viên</th>
+                            <th scope="col">Phòng Ban</th>
+                            <th scope="col">Tổng Giờ</th>
+                            <th scope="col">Số Công</th>
+                            <th scope="col">Mức Lương Ngày</th>
+                            <th scope="col">Lương Dự Kiến</th>
+                            <th scope="col">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for data in employee_work_data %}
+                        <tr>
+                            <td>
+                                <span class="badge bg-light text-dark">{{ data.employee.employee_id }}</span>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    {% if data.employee.profile_image %}
+                                    <img src="{{ data.employee.profile_image.url }}" class="rounded-circle me-2" width="35" height="35">
+                                    {% else %}
+                                    <div class="rounded-circle bg-light text-primary d-flex align-items-center justify-content-center me-2" style="width:35px;height:35px">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    {% endif %}
+                                    <div>{{ data.employee.first_name }} {{ data.employee.last_name }}</div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if data.employee.department %}
+                                <span class="badge bg-info text-dark">{{ data.employee.department.name }}</span>
+                                {% else %}
+                                <span class="badge bg-light text-dark">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ data.total_hours }}</td>
+                            <td>
+                                <span class="badge bg-primary">{{ data.total_work_units }}</span>
+                            </td>
+                            <td>{{ data.employee.daily_rate|floatformat:2 }}</td>
+                            <td>
+                                <span class="fw-bold text-success">{{ data.estimated_salary|floatformat:2 }}</span>
+                            </td>
+                            <td>
+                                <a href="{% url 'face_attendance:employee_salary' data.employee.employee_id %}" class="btn btn-info btn-sm btn-action">
+                                    <i class="fas fa-info-circle me-1"></i> Chi Tiết
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="empty-state">
+                                <i class="fas fa-calendar-times"></i>
+                                <h5>Không có dữ liệu!</h5>
+                                <p class="mb-0">Không có dữ liệu ngày công trong khoảng thời gian này</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <a href="{% url 'face_attendance:index' %}" class="footer-link">
+        <i class="fas fa-arrow-left me-1"></i> Quay lại trang chủ
+    </a>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Thêm hiệu ứng sắp xếp bảng nếu cần
+    document.addEventListener('DOMContentLoaded', function() {
+        // Hiệu ứng làm nổi bật hàng khi hover
+        const tableRows = document.querySelectorAll('tbody tr');
+        tableRows.forEach(row => {
+            row.addEventListener('mouseenter', function() {
+                this.style.boxShadow = '0 0 10px rgba(0,0,0,0.1)';
+                this.style.zIndex = '1';
+            });
+            
+            row.addEventListener('mouseleave', function() {
+                this.style.boxShadow = 'none';
+                this.style.zIndex = 'auto';
+            });
+        });
+    });
+</script>
+{% endblock %}

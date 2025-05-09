@@ -1,123 +1,467 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mark Attendance | Face Attendance System</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'css/style-mark-atten.css' %}">    
-</head>
-<body>
-    {% block content %}
-    <div class="container">
-        {% if messages %}
-        <div class="alert alert-info">
-            {% for message in messages %}
-                <p>{{ message }}</p>
-            {% endfor %}
-        </div>
-        {% endif %}
+{% extends 'face_attendance/base.html' %}
+{% load static %}
+
+{% block title %}Điểm Danh | Hệ Thống Điểm Danh Khuôn Mặt{% endblock %}
+
+{% block page_title %}Điểm Danh Bằng Khuôn Mặt{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/style-mark-atten.css' %}">
+<style>
+    /* Ghi đè các biến màu từ style-mark-atten.css để phù hợp với nền trắng */
+    :root {
+        --bg-primary: #ffffff;
+        --bg-secondary: #ffffff;
+        --text-primary: #333333;
+        --text-secondary: #6c757d;
+        --input-bg: #f8f9fc;
+        --accent-color: var(--primary-color);
+        --success-color: #1cc88a;
+        --error-color: #e74a3b;
+        --btn-hover: #3a58ca;
+    }
     
-        <div class="row">
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h3>Mark Attendance</h3>
-                    </div>
-                    <div class="card-body">
-                        <form method="post" id="attendanceForm">
-                            {% csrf_token %}
-                            <p class="mb-4">Click "Start Camera" to begin, then "Capture" to mark your attendance.</p>
-                            
-                            <div class="camera-container">
-                                <video id="video" autoplay></video>
-                                <canvas id="canvas" style="display: none;"></canvas>
-                            </div>
+    body {
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
+    }
     
-                            <div class="d-grid gap-2 mt-4">
-                                <button type="button" id="startButton" class="btn btn-primary btn-lg">
-                                    <i class="fas fa-video"></i> Start Camera
-                                </button>
-                                <div class="btn-group" style="display: flex;">
-                                    <button type="button" id="captureButton" class="btn btn-capture btn-lg" style="display: none; flex-grow: 2;">
-                                        <i class="fas fa-camera"></i> Capture
-                                    </button>
-                                    <button type="button" id="stopButton" class="btn btn-outline-secondary btn-lg" style="display: none; flex-grow: 1;">
-                                        <i class="fas fa-stop"></i> Stop
-                                    </button>
-                                </div>
-                            </div>
+    .card {
+        border: none;
+        border-radius: 0.75rem;
+        background-color: #ffffff;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
     
-                            <div class="status-container" id="statusContainer" style="display: none;">
-                                <div class="recognition-icon">
-                                    <i class="fas fa-spinner fa-spin" id="processingIcon"></i>
-                                    <i class="fas fa-check-circle" id="successIcon" style="display: none; color: #2ecc71;"></i>
-                                    <i class="fas fa-times-circle" id="failIcon" style="display: none; color: #e74c3c;"></i>
-                                </div>
-                                <div class="recognition-status" id="recognitionStatus">Processing...</div>
-                                
-                                <div class="mt-3">
-                                    <span class="status-badge check-in" id="checkInStatus" style="display: none;">
-                                        <i class="fas fa-sign-in-alt"></i> Check-In
-                                    </span>
-                                    <span class="status-badge check-out" id="checkOutStatus" style="display: none;">
-                                        <i class="fas fa-sign-out-alt"></i> Check-Out
-                                    </span>
-                                </div>
-                            </div>
-                        </form>
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 2rem 0 rgba(58, 59, 69, 0.2);
+    }
+    
+    .card-header {
+        background-color: var(--primary-color);
+        color: white;
+        font-weight: 600;
+        padding: 1rem 1.5rem;
+        border: none;
+    }
+    
+    .card-header h3 {
+        margin: 0;
+        font-size: 1.25rem;
+        color: white;
+    }
+    
+    .camera-container {
+        text-align: center;
+        margin: 1rem 0;
+        position: relative;
+        overflow: hidden;
+        border-radius: 0.5rem;
+        box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1);
+        background-color: #f8f9fc;
+    }
+    
+    video {
+        width: 100%;
+        max-height: 480px;
+        border-radius: 0.25rem;
+        border: 2px solid var(--primary-color);
+        display: none; /* Will be set to 'block' via JavaScript when camera starts */
+        transition: all 0.3s ease;
+        object-fit: cover; /* Ensure the video maintains aspect ratio */
+        background-color: #000; /* Dark background for video element */
+    }
+    
+    .btn-primary {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        font-weight: 600;
+        padding: 0.75rem 1.25rem;
+    }
+    
+    .btn-capture {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        border: none;
+        color: white;
+    }
+    
+    .btn-outline-secondary {
+        border: 1px solid #d1d3e2;
+        color: #6e707e;
+        background: transparent;
+        padding: 0.75rem 1.25rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-outline-secondary:hover {
+        background-color: #f8f9fc;
+        color: var(--primary-color);
+    }
+    
+    .recognition-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        color: var(--primary-color);
+    }
+    
+    .recognition-status {
+        font-weight: 600;
+        font-size: 1.1rem;
+        color: var(--text-primary);
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        border-radius: 2rem;
+        font-weight: 600;
+        margin: 0 0.25rem;
+    }
+    
+    .status-badge.check-in {
+        background-color: rgba(28, 200, 138, 0.1);
+        color: #1cc88a;
+        border: 1px solid rgba(28, 200, 138, 0.2);
+    }
+    
+    .status-badge.check-out {
+        background-color: rgba(246, 194, 62, 0.1);
+        color: #f6c23e;
+        border: 1px solid rgba(246, 194, 62, 0.2);
+    }
+    
+    .status-container {
+        background-color: #f8f9fc;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-top: 1.5rem;
+        text-align: center;
+        border: 1px solid #ededed;
+    }
+    
+    .alert-info {
+        background-color: #e3f2fd;
+        border: 1px solid #cfe2f3;
+        color: #0c5460;
+        border-radius: 0.5rem;
+    }
+    
+    .alert-light {
+        background-color: #f8f9fc;
+        border: 1px solid #ededed;
+    }
+    
+    .clock-container {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 150px;
+    }
+    
+    .current-time {
+        font-size: 2.5rem;
+        font-weight: 700;
+        text-align: center;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        font-family: 'Roboto Mono', monospace; /* Font chữ đều chân */
+        min-width: 200px; /* Đảm bảo chiều rộng cố định */
+    }
+    
+    .current-date {
+        font-size: 1.25rem;
+        text-align: center;
+        opacity: 0.9;
+        font-family: 'Roboto', sans-serif;
+        min-height: 30px; /* Chiều cao cố định */
+    }
+    
+    .quick-guide {
+        margin-top: 1.5rem;
+    }
+    
+    .step-item {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+    }
+    
+    .step-number {
+        width: 2rem;
+        height: 2rem;
+        background: var(--primary-color);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        margin-right: 0.75rem;
+        flex-shrink: 0;
+    }
+    
+    .step-text {
+        flex-grow: 1;
+        color: var(--text-primary);
+    }
+    
+    .status-label {
+        font-weight: 600;
+        margin-right: 0.5rem;
+    }
+    
+    .status-time {
+        font-weight: 700;
+        color: var(--primary-color);
+    }
+    
+    @media (max-width: 767.98px) {
+        .card-body {
+            padding: 1rem;
+        }
+        
+        .current-time {
+            font-size: 2rem;
+        }
+    }
+    
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+            opacity: 1;
+        }
+        50% {
+            transform: scale(1.1);
+            opacity: 0.8;
+        }
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+    
+    #processingIcon {
+        animation: pulse 1.5s infinite;
+    }
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    {% if messages %}
+    <div class="alert alert-info alert-dismissible fade show mb-4" role="alert">
+        {% for message in messages %}
+            {{ message }}
+        {% endfor %}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header d-flex align-items-center">
+                    <i class="fas fa-camera me-2"></i>
+                    <h3>Điểm Danh Bằng Khuôn Mặt</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="attendanceForm">
+                        {% csrf_token %}
                         
-                        <div class="back-button" onclick="location.href='{% url 'face_attendance:index' %}'">
-                            <i class="fas fa-home"></i> Back to Home
+                        <!-- Hiển thị ngày giờ hiện tại -->
+                        <div class="clock-container mb-4">
+                            <div class="current-time" id="currentTime"><span id="hour">00</span>:<span id="minute">00</span>:<span id="second">00</span></div>
+                            <div class="current-date" id="currentDate">-- --- ----</div>
+                        </div>
+                        
+                        <p class="lead text-center mb-4">Đặt khuôn mặt của bạn vào khung hình camera và nhấn "Chụp Ảnh" để điểm danh</p>
+                        
+                        <div class="camera-container">
+                            <video id="video" autoplay></video>
+                            <canvas id="canvas" style="display: none;"></canvas>
+                        </div>
+                        
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="button" id="startButton" class="btn btn-primary btn-lg">
+                                <i class="fas fa-video me-2"></i> Bật Camera
+                            </button>
+                            <div class="row mt-2" id="captureControls" style="display: none;">
+                                <div class="col-8">
+                                    <button type="button" id="captureButton" class="btn btn-capture btn-lg w-100">
+                                        <i class="fas fa-camera me-2"></i> Chụp Ảnh
+                                    </button>
+                                </div>
+                                <div class="col-4">
+                                    <button type="button" id="stopButton" class="btn btn-outline-secondary btn-lg w-100">
+                                        <i class="fas fa-stop"></i> Dừng
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="status-container" id="statusContainer" style="display: none;">
+                            <div class="recognition-icon">
+                                <i class="fas fa-spinner fa-spin" id="processingIcon"></i>
+                                <i class="fas fa-check-circle" id="successIcon" style="display: none; color: var(--secondary-color);"></i>
+                                <i class="fas fa-times-circle" id="failIcon" style="display: none; color: #e74a3b;"></i>
+                            </div>
+                            <div class="recognition-status" id="recognitionStatus">Đang xử lý...</div>
+                            
+                            <div class="mt-3">
+                                <span class="status-badge check-in" id="checkInStatus" style="display: none;">
+                                    <i class="fas fa-sign-in-alt me-1"></i> Giờ Vào
+                                </span>
+                                <span class="status-badge check-out" id="checkOutStatus" style="display: none;">
+                                    <i class="fas fa-sign-out-alt me-1"></i> Giờ Ra
+                                </span>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Thẻ hiển thị trạng thái điểm danh hôm nay -->
+            <div class="card">
+                <div class="card-header d-flex align-items-center">
+                    <i class="fas fa-clipboard-check me-2"></i>
+                    <h3>Trạng Thái Điểm Danh Hôm Nay</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="status-label text-muted">Giờ Vào:</div>
+                                <div class="status-time">
+                                    {% if check_in_time %}
+                                        <span class="badge bg-success">{{ check_in_time|time:"H:i:s" }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Chưa ghi nhận</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="status-label text-muted">Giờ Ra:</div>
+                                <div class="status-time">
+                                    {% if check_out_time %}
+                                        <span class="badge bg-warning text-dark">{{ check_out_time|time:"H:i:s" }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Chưa ghi nhận</span>
+                                    {% endif %}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-            
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h3>Instructions</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="alert alert-info">
-                            <h4>How to Mark Attendance:</h4>
-                            <ol>
-                                <li>Click "Start Camera" to activate your webcam</li>
-                                <li>Position your face clearly in the frame</li>
-                                <li>Click "Capture" when ready to check-in/check-out</li>
-                                <li>Wait for the system to recognize your face</li>
-                                <li>If this is your first time today, it will mark check-in</li>
-                                <li>If you've already checked in, it will mark check-out</li>
-                            </ol>
-                            <p><strong>Keyboard shortcuts:</strong> Press 'c' to capture, 'q' to quit camera</p>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header d-flex align-items-center">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <h3>Hướng Dẫn Sử Dụng</h3>
+                </div>
+                <div class="card-body">
+                    <div class="quick-guide">
+                        <div class="step-item">
+                            <div class="step-number">1</div>
+                            <div class="step-text">Nhấn "Bật Camera" để kích hoạt webcam</div>
                         </div>
-                        
-                        <div class="alert alert-info mt-4">
-                            <h4>Today's Status:</h4>
-                            <div class="row">
-                                <div class="col-6">
-                                    <p><strong>Date:</strong> <span id="currentDate"></span></p>
-                                    <p><strong>Time:</strong> <span id="currentTime"></span></p>
-                                </div>
-                                <div class="col-6">
-                                    <p><strong>Check-In:</strong> {% if check_in_time %}{{ check_in_time|time:"H:i:s" }}{% else %}Not marked{% endif %}</p>
-                                    <p><strong>Check-Out:</strong> {% if check_out_time %}{{ check_out_time|time:"H:i:s" }}{% else %}Not marked{% endif %}</p>
-                                </div>
+                        <div class="step-item">
+                            <div class="step-number">2</div>
+                            <div class="step-text">Đặt khuôn mặt của bạn rõ ràng trong khung hình</div>
+                        </div>
+                        <div class="step-item">
+                            <div class="step-number">3</div>
+                            <div class="step-text">Nhấn "Chụp Ảnh" khi bạn đã sẵn sàng điểm danh</div>
+                        </div>
+                        <div class="step-item">
+                            <div class="step-number">4</div>
+                            <div class="step-text">Đợi hệ thống nhận diện khuôn mặt của bạn</div>
+                        </div>
+                        <div class="step-item">
+                            <div class="step-number">5</div>
+                            <div class="step-text">Nếu đây là lần đầu tiên trong ngày, hệ thống sẽ ghi nhận giờ vào. Nếu bạn đã điểm danh giờ vào, hệ thống sẽ ghi nhận giờ ra</div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info mt-4">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-lightbulb me-2 fs-4"></i>
+                            <div>
+                                <strong>Mẹo:</strong> Đảm bảo khuôn mặt của bạn được chiếu sáng đầy đủ và không bị che khuất
                             </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-light mt-3">
+                        <div class="text-center">
+                            <strong>Phím tắt:</strong><br>
+                            Nhấn 'c' để chụp ảnh<br>
+                            Nhấn 'q' để thoát camera
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    {% endblock %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/mark_attendance.js' %}"></script>
+<script>
+    // Hiển thị ngày giờ hiện tại với kỹ thuật tránh giật
+    function updateClock() {
+        const now = new Date();
+        
+        // Định dạng thời gian - sử dụng monospace font và padding
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        
+        // Cập nhật từng phần tử riêng biệt để tránh giật layout
+        document.getElementById('hour').textContent = hours;
+        document.getElementById('minute').textContent = minutes;
+        document.getElementById('second').textContent = seconds;
+        
+        // Cập nhật ngày tháng chỉ khi cần thiết (mỗi phút)
+        if (seconds === '00' || !document.getElementById('currentDate').dataset.initialized) {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const dateStr = now.toLocaleDateString('vi-VN', options);
+            document.getElementById('currentDate').textContent = dateStr;
+            document.getElementById('currentDate').dataset.initialized = 'true';
+        }
+    }
     
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
-    <script src="{% static 'js/mark_attendance.js' %}"></script>
-</body>
-</html>
+    // Tạo cấu trúc đồng hồ khi trang tải xong
+    document.addEventListener('DOMContentLoaded', function() {
+        const clockContainer = document.querySelector('.current-time');
+        if (clockContainer) {
+            clockContainer.innerHTML = '<span id="hour">00</span>:<span id="minute">00</span>:<span id="second">00</span>';
+            updateClock(); // Cập nhật ngay lập tức
+            
+            // Cập nhật đồng hồ mỗi giây
+            setInterval(updateClock, 1000);
+        }
+        
+        // Hiển thị nút điều khiển camera sau khi bật camera
+        document.getElementById('startButton').addEventListener('click', function() {
+            document.getElementById('captureControls').style.display = 'flex';
+        });
+    });
+</script>
+{% endblock %}

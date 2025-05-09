@@ -1,0 +1,193 @@
+{% extends 'face_attendance/base.html' %}
+{% load static %}
+
+{% block title %}Lương Chi Tiết - {{ employee.first_name }} {{ employee.last_name }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/style-employee-salary.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="employee-header">
+        <div class="employee-info">
+            {% if employee.profile_image %}
+            <img src="{{ employee.profile_image.url }}" alt="Ảnh nhân viên" class="employee-avatar">
+            {% else %}
+            <div class="avatar-placeholder">
+                <i class="fas fa-user-circle"></i>
+            </div>
+            {% endif %}
+            <div class="employee-details">
+                <h1>{{ employee.first_name }} {{ employee.last_name }}</h1>
+                <div class="employee-meta">
+                    <span><i class="fas fa-id-card"></i> {{ employee.employee_id }}</span>
+                    <span><i class="fas fa-briefcase"></i> {{ employee.position }}</span>
+                    <span><i class="fas fa-building"></i> {{ employee.department.name|default:"Chưa phân phòng" }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="rate-card">
+            <div class="rate-info">
+                <h3>Mức lương ngày công</h3>
+                <div class="rate-amount">{{ employee.daily_rate|floatformat:2 }}</div>
+                <a href="{% url 'face_attendance:update_daily_rate' employee.employee_id %}" class="btn btn-warning btn-sm mt-2">
+                    <i class="fas fa-edit me-1"></i> Cập nhật mức lương
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Period Filter -->
+    <div class="period-filter">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label for="date_from" class="form-label">Từ ngày:</label>
+                <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
+            </div>
+            <div class="col-md-4">
+                <label for="date_to" class="form-label">Đến ngày:</label>
+                <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
+            </div>
+            <div class="col-md-4">
+                <label class="invisible">Filter</label>
+                <button type="submit" class="btn btn-primary w-100">Xem Dữ Liệu</button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Salary Summary -->
+    <div class="salary-summary">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="summary-card">
+                    <div class="summary-icon">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <div class="summary-content">
+                        <h3>Tổng số ngày làm</h3>
+                        <p class="summary-value">{{ attendance_records|length }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="summary-card">
+                    <div class="summary-icon" style="background-color: #4caf50;">
+                        <i class="fas fa-business-time"></i>
+                    </div>
+                    <div class="summary-content">
+                        <h3>Tổng công</h3>
+                        <p class="summary-value">{{ total_work_units|floatformat:2 }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="summary-card">
+                    <div class="summary-icon" style="background-color: #ff9800;">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                    <div class="summary-content">
+                        <h3>Tổng lương</h3>
+                        <p class="summary-value">{{ total_salary|floatformat:2 }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Detailed Salary Calculation -->
+    <div class="salary-details">
+        <div class="card">
+            <div class="card-header">
+                <h3>Chi tiết tính lương</h3>
+            </div>
+            <div class="card-body">
+                <div class="calculation-steps">
+                    <div class="calculation-item">
+                        <div class="calc-label">Tổng công</div>
+                        <div class="calc-value">{{ total_work_units|floatformat:2 }}</div>
+                    </div>
+                    <div class="calculation-item">
+                        <div class="calc-label">Mức lương ngày công</div>
+                        <div class="calc-value">{{ employee.daily_rate|floatformat:2 }}</div>
+                    </div>
+                    <div class="calculation-item">
+                        <div class="calc-label">Lương gộp</div>
+                        <div class="calc-value">{{ total_salary|floatformat:2 }}</div>
+                        <div class="calc-formula">{{ total_work_units|floatformat:2 }} × {{ employee.daily_rate|floatformat:2 }}</div>
+                    </div>
+                    <div class="calculation-item">
+                        <div class="calc-label">Khấu trừ (20%)</div>
+                        <div class="calc-value">{{ deductions|floatformat:2 }}</div>
+                        <div class="calc-formula">{{ total_salary|floatformat:2 }} × 0.2</div>
+                    </div>
+                    <div class="calculation-item highlight">
+                        <div class="calc-label">Lương thực nhận</div>
+                        <div class="calc-value">{{ net_salary|floatformat:2 }}</div>
+                        <div class="calc-formula">{{ total_salary|floatformat:2 }} - {{ deductions|floatformat:2 }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Attendance Records Table -->
+    <div class="attendance-records">
+        <div class="card">
+            <div class="card-header">
+                <h3>Chi tiết chấm công</h3>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Ngày</th>
+                                <th>Giờ vào</th>
+                                <th>Giờ ra</th>
+                                <th>Tổng giờ</th>
+                                <th>Công</th>
+                                <th>Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in attendance_records %}
+                            <tr>
+                                <td>{{ record.date|date:"d/m/Y" }}</td>
+                                <td>{{ record.check_in_time|time:"H:i:s" }}</td>
+                                <td>{{ record.check_out_time|time:"H:i:s"|default:"Chưa check-out" }}</td>
+                                <td>{{ record.hours_worked|floatformat:2 }}</td>
+                                <td>{{ record.work_units|floatformat:2 }}</td>
+                                <td>
+                                    <span class="status-badge 
+                                        {% if record.status == 'present' %}status-present
+                                        {% elif record.status == 'late' %}status-late
+                                        {% elif record.status == 'absent' %}status-absent
+                                        {% elif record.status == 'half_day' %}status-half
+                                        {% else %}status-leave{% endif %}">
+                                        {{ record.get_status_display }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center">Không có bản ghi chấm công trong khoảng thời gian này</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="actions-footer">
+        <a href="{% url 'face_attendance:salary_calculator' %}?date_from={{ date_from }}&date_to={{ date_to }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Quay lại bảng lương
+        </a>
+        <a href="?date_from={{ date_from }}&date_to={{ date_to }}&download_report=true" class="btn btn-success">
+            <i class="fas fa-download me-1"></i> Xuất phiếu lương
+        </a>
+    </div>
+</div>
+{% endblock %}

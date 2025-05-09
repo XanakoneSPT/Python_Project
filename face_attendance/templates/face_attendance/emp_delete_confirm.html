@@ -1,93 +1,198 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Delete Employee Confirmation</title>
-    <style>
-        :root {
-            --bg-primary: #0f1229;
-            --bg-secondary: #1a1f3d;
-            --accent-color: #4ecdc4;
-            --text-primary: #ffffff;
-            --text-secondary: #b0b7c6;
-            --card-bg: rgba(255, 255, 255, 0.05);
-            --danger-color: #ff6b6b;
-        }
+{% extends 'face_attendance/base.html' %}
+{% load static %}
 
-        body {
-            font-family: 'Inter', Arial, sans-serif;
-            background-color: var(--bg-primary);
-            color: var(--text-primary);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            padding: 0;
-        }
+{% block title %}Xác Nhận Xóa Nhân Viên | Hệ Thống Điểm Danh Khuôn Mặt{% endblock %}
 
-        .container {
-            background-color: var(--bg-secondary);
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.2);
-            width: 400px;
-            text-align: center;
-        }
+{% block page_title %}{% endblock %}
 
-        h1 {
-            color: var(--danger-color);
-            margin-bottom: 20px;
+{% block extra_css %}
+<style>
+    .confirm-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 70vh;
+        padding: 2rem 0;
+    }
+    
+    .confirm-card {
+        background-color: white;
+        border-radius: 1rem;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+        padding: 2.5rem;
+        text-align: center;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        max-width: 500px;
+        width: 100%;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .confirm-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 2rem 0 rgba(58, 59, 69, 0.2);
+    }
+    
+    .confirm-icon {
+        width: 90px;
+        height: 90px;
+        background-color: #e74a3b;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        margin: 0 auto 1.5rem;
+        box-shadow: 0 0.5rem 1rem rgba(231, 74, 59, 0.3);
+    }
+    
+    .confirm-title {
+        color: #e74a3b;
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
+    
+    .confirm-message {
+        color: #5a5c69;
+        font-size: 1.1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .employee-details {
+        background-color: #f8f9fc;
+        border-radius: 0.5rem;
+        padding: 1.25rem;
+        margin-bottom: 2rem;
+        border-left: 4px solid #e74a3b;
+    }
+    
+    .detail-row {
+        display: flex;
+        margin-bottom: 0.5rem;
+        text-align: left;
+    }
+    
+    .detail-label {
+        flex: 0 0 30%;
+        font-weight: 600;
+        color: #5a5c69;
+    }
+    
+    .detail-value {
+        flex: 0 0 70%;
+        color: #6e707e;
+    }
+    
+    .action-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+    }
+    
+    .btn-confirm {
+        background-color: #e74a3b;
+        color: white;
+        border: none;
+        padding: 0.625rem 1.5rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-confirm:hover {
+        background-color: #d52a1a;
+        transform: translateY(-3px);
+        box-shadow: 0 0.5rem 1rem rgba(231, 74, 59, 0.2);
+    }
+    
+    .btn-cancel {
+        background-color: #858796;
+        color: white;
+        border: none;
+        padding: 0.625rem 1.5rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+    
+    .btn-cancel:hover {
+        background-color: #6e707e;
+        transform: translateY(-3px);
+        box-shadow: 0 0.5rem 1rem rgba(133, 135, 150, 0.2);
+        color: white;
+    }
+    
+    @media (max-width: 576px) {
+        .confirm-card {
+            padding: 1.5rem;
         }
+        
+        .confirm-icon {
+            width: 70px;
+            height: 70px;
+            font-size: 2rem;
+        }
+        
+        .confirm-title {
+            font-size: 1.5rem;
+        }
+        
+        .confirm-message {
+            font-size: 1rem;
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+    }
+</style>
+{% endblock %}
 
-        p {
-            color: var(--text-secondary);
-            margin-bottom: 30px;
-        }
-
-        .actions {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-        }
-
-        .actions a, .actions button {
-            padding: 10px 20px;
-            border-radius: 5px;
-            text-decoration: none;
-            transition: background-color 0.3s ease;
-            border: none;
-            font-family: 'Inter', Arial, sans-serif;
-            cursor: pointer;
-        }
-
-        .actions a {
-            background-color: var(--accent-color);
-            color: var(--bg-primary);
-        }
-
-        .actions button {
-            background-color: var(--danger-color);
-            color: var(--text-primary);
-        }
-
-        .actions a:hover, .actions button:hover {
-            opacity: 0.9;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Delete Employee</h1>
-        <p>Are you sure you want to delete {{ emp.name }}?</p>
-        <div class="actions">
+{% block content %}
+<div class="confirm-container">
+    <div class="confirm-card">
+        <div class="confirm-icon">
+            <i class="fas fa-trash-alt"></i>
+        </div>
+        
+        <h1 class="confirm-title">Xác Nhận Xóa Nhân Viên</h1>
+        <p class="confirm-message">Bạn có chắc chắn muốn xóa nhân viên này? Hành động này không thể hoàn tác.</p>
+        
+        <div class="employee-details">
+            <div class="detail-row">
+                <div class="detail-label">Mã NV:</div>
+                <div class="detail-value">{{ emp.employee_id }}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Họ Tên:</div>
+                <div class="detail-value">{{ emp.first_name }} {{ emp.last_name }}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Chức Vụ:</div>
+                <div class="detail-value">{{ emp.position }}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Phòng Ban:</div>
+                <div class="detail-value">{{ emp.department.name }}</div>
+            </div>
+        </div>
+        
+        <div class="action-buttons">
             <form method="post">
                 {% csrf_token %}
-                <button type="submit">Delete</button>
-                <a href="{% url 'face_attendance:employee_detail' employee_id=emp.employee_id %}">Cancel</a>
+                <button type="submit" class="btn-confirm">
+                    <i class="fas fa-trash-alt me-2"></i> Xác Nhận Xóa
+                </button>
             </form>
+            <a href="{% url 'face_attendance:employee_detail' employee_id=emp.employee_id %}" class="btn-cancel">
+                <i class="fas fa-times me-2"></i> Hủy Bỏ
+            </a>
         </div>
     </div>
-</body>
-</html>
+</div>
+{% endblock %}
