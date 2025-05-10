@@ -253,3 +253,43 @@ document.addEventListener('DOMContentLoaded', function() {
         stopCamera();
     });
 });
+
+    // // Hiển thị ngày giờ hiện tại với kỹ thuật tránh giật
+    // function updateClock() {
+    //     const now = new Date();
+        
+    //     // Định dạng thời gian - sử dụng monospace font và padding
+    //     const hours = String(now.getHours()).padStart(2, '0');
+    //     const minutes = String(now.getMinutes()).padStart(2, '0');
+    //     const seconds = String(now.getSeconds()).padStart(2, '0');
+        
+    //     // Cập nhật từng phần tử riêng biệt để tránh giật layout
+    //     document.getElementById('hour').textContent = hours;
+    //     document.getElementById('minute').textContent = minutes;
+    //     document.getElementById('second').textContent = seconds;
+        
+    //     // Cập nhật ngày tháng chỉ khi cần thiết (mỗi phút)
+    //     if (seconds === '00' || !document.getElementById('currentDate').dataset.initialized) {
+    //         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    //         const dateStr = now.toLocaleDateString('vi-VN', options);
+    //         document.getElementById('currentDate').textContent = dateStr;
+    //         document.getElementById('currentDate').dataset.initialized = 'true';
+    //     }
+    // }
+    
+    // // Tạo cấu trúc đồng hồ khi trang tải xong
+    // document.addEventListener('DOMContentLoaded', function() {
+    //     const clockContainer = document.querySelector('.current-time');
+    //     if (clockContainer) {
+    //         clockContainer.innerHTML = '<span id="hour">00</span>:<span id="minute">00</span>:<span id="second">00</span>';
+    //         updateClock(); // Cập nhật ngay lập tức
+            
+    //         // Cập nhật đồng hồ mỗi giây
+    //         setInterval(updateClock, 1000);
+    //     }
+        
+    //     // Hiển thị nút điều khiển camera sau khi bật camera
+    //     document.getElementById('startButton').addEventListener('click', function() {
+    //         document.getElementById('captureControls').style.display = 'flex';
+    //     });
+    // });
