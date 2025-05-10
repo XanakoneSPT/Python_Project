@@ -19,6 +19,7 @@ urlpatterns = [
 
     # path('employee/<int:employee_id>/', views.employee_detail, name='employee_detail'),
     path('employee/<str:employee_id>/', views.employee_detail, name='employee_detail'),
+    path('employee/update/<str:employee_id>/', views.emp_update, name='emp_update'),
 
     path('payroll/', views.payroll_list, name='payroll_list'),
     path('payroll/<int:payroll_id>/', views.payroll_detail, name='payroll_detail'),

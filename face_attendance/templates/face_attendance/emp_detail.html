@@ -7,6 +7,62 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/style-emp-detail.css' %}">
+<style>
+    /* Edit mode styles */
+    .edit-mode {
+        display: none;
+    }
+    
+    .form-group {
+        margin-bottom: 15px;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+    
+    .form-label {
+        font-weight: 600;
+        margin-bottom: 5px;
+        display: block;
+    }
+    
+    .btn-save {
+        background-color: #28a745;
+        color: white;
+    }
+    
+    .btn-cancel {
+        background-color: #6c757d;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const editButton = document.getElementById('edit-button');
+        const viewMode = document.getElementById('view-mode');
+        const editMode = document.getElementById('edit-mode');
+        const cancelButton = document.getElementById('cancel-edit');
+        
+        editButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            viewMode.style.display = 'none';
+            editMode.style.display = 'block';
+        });
+        
+        cancelButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            editMode.style.display = 'none';
+            viewMode.style.display = 'block';
+        });
+    });
+</script>
 {% endblock %}
 
 {% block content %}
@@ -30,7 +86,8 @@
             </div>
         </div>
         
-        <div class="employee-body">
+        <!-- View Mode -->
+        <div id="view-mode" class="employee-body">
             <div class="detail-group">
                 <h2 class="section-title"><i class="fas fa-id-card me-2"></i>Thông Tin Cá Nhân</h2>
                 
@@ -52,11 +109,6 @@
             
             <div class="detail-group">
                 <h2 class="section-title"><i class="fas fa-building me-2"></i>Thông Tin Công Việc</h2>
-                
-                <div class="detail-row">
-                    <div class="detail-label">Phòng Ban:</div>
-                    <div class="detail-value">{{ employee.department.name }}</div>
-                </div>
                 
                 <div class="detail-row">
                     <div class="detail-label">Chức Vụ:</div>
@@ -85,7 +137,7 @@
                     <i class="fas fa-arrow-left"></i> Quay Lại
                 </a>
                 
-                <a href="#" class="btn btn-edit btn-action">
+                <a href="#" id="edit-button" class="btn btn-edit btn-action">
                     <i class="fas fa-edit"></i> Chỉnh Sửa
                 </a>
                 
@@ -101,6 +153,67 @@
                     <i class="fas fa-trash-alt"></i> Xóa
                 </a>
             </div>
+        </div>
+        
+        <!-- Edit Mode -->
+        <div id="edit-mode" class="employee-body edit-mode">
+            <form method="post" action="{% url 'face_attendance:emp_update' employee_id=employee.employee_id %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <div class="detail-group">
+                    <h2 class="section-title"><i class="fas fa-id-card me-2"></i>Thông Tin Cá Nhân</h2>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="first_name">Tên:</label>
+                        <input type="text" id="first_name" name="first_name" class="form-control" value="{{ employee.first_name }}" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="last_name">Họ:</label>
+                        <input type="text" id="last_name" name="last_name" class="form-control" value="{{ employee.last_name }}" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="email">Email:</label>
+                        <input type="email" id="email" name="email" class="form-control" value="{{ employee.email }}" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="phone">Số Điện Thoại:</label>
+                        <input type="tel" id="phone" name="phone" class="form-control" value="{{ employee.phone }}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="profile_image">Ảnh Đại Diện:</label>
+                        <input type="file" id="profile_image" name="profile_image" class="form-control">
+                        <small class="text-muted">Để trống nếu không muốn thay đổi ảnh</small>
+                    </div>
+                </div>
+                
+                <div class="detail-group">
+                    <h2 class="section-title"><i class="fas fa-building me-2"></i>Thông Tin Công Việc</h2>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="position">Chức Vụ:</label>
+                        <input type="text" id="position" name="position" class="form-control" value="{{ employee.position }}" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="date_hired">Ngày Tuyển Dụng:</label>
+                        <input type="date" id="date_hired" name="date_hired" class="form-control" value="{{ employee.date_hired|date:'Y-m-d' }}" required>
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button type="button" id="cancel-edit" class="btn btn-cancel btn-action">
+                        <i class="fas fa-times"></i> Hủy
+                    </button>
+                    
+                    <button type="submit" class="btn btn-save btn-action">
+                        <i class="fas fa-save"></i> Lưu
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

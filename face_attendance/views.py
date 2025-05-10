@@ -482,6 +482,43 @@ def emp_delete(request, employee_id):
     
     return render(request, 'face_attendance/emp_delete_confirm.html', {'emp': emp})
 
+@login_required
+def emp_update(request, employee_id):
+    """
+    Update employee information
+    """
+    employee = get_object_or_404(Employee, employee_id=employee_id)
+    departments = Department.objects.all()
+    
+    if request.method == 'POST':
+        # Process form data
+        employee.first_name = request.POST.get('first_name')
+        employee.last_name = request.POST.get('last_name')
+        employee.email = request.POST.get('email')
+        employee.phone = request.POST.get('phone')
+        employee.position = request.POST.get('position')
+        employee.date_hired = request.POST.get('date_hired')
+        
+        # Department handling removed as requested
+        
+        # Handle profile image if uploaded
+        if 'profile_image' in request.FILES:
+            employee.profile_image = request.FILES['profile_image']
+        
+        # Save the updated employee information
+        employee.save()
+        
+        messages.success(request, f'Thông tin nhân viên {employee.first_name} {employee.last_name} đã được cập nhật.')
+        # Make sure you have a URL pattern named 'employee_detail' that matches your structure
+        return redirect('face_attendance:employee_detail', employee_id=employee.employee_id)
+    
+    # For GET requests, render the employee detail page with departments
+    context = {
+        'employee': employee,
+        'departments': departments,
+    }
+    return render(request, 'face_attendance:employee_detail.html', context)
+
 # View function for user login
 def user_login(request):
     # Check if the request method is POST, indicating a form submission
