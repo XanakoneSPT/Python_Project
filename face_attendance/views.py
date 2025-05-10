@@ -7,6 +7,7 @@ from .models import (
 from django.utils import timezone
 from django.db import IntegrityError
 import datetime
+from datetime import timedelta
 from .face_utils import register_employee_face, recognize_face_for_attendance
 
 from django.contrib.auth import authenticate, login, logout
@@ -26,6 +27,30 @@ from django.utils import timezone
 import csv
 from decimal import Decimal  # Import Decimal for handling currency calculations
 
+def index(request):
+    # Calculate statistics for the dashboard
+    employee_count = Employee.objects.filter(is_active=True).count()
+    today = timezone.now().date()
+    today_attendance_count = AttendanceRecord.objects.filter(date=today).count()
+    yesterday = today - timedelta(days=1)
+    yesterday_attendance_count = AttendanceRecord.objects.filter(date=yesterday).count()
+    first_day_of_month = today.replace(day=1)
+    month_attendance_count = AttendanceRecord.objects.filter(date__gte=first_day_of_month, date__lte=today).count()
+    
+    # Print values for debugging
+    print(f"Employee count: {employee_count}")
+    print(f"Today attendance: {today_attendance_count}")
+    print(f"Yesterday attendance: {yesterday_attendance_count}")
+    print(f"Month attendance: {month_attendance_count}")
+    
+    context = {
+        'employee_count': employee_count,
+        'today_attendance_count': today_attendance_count,
+        'yesterday_attendance_count': yesterday_attendance_count, 
+        'month_attendance_count': month_attendance_count,
+    }
+    
+    return render(request, 'face_attendance/index.html', context)
 
 @login_required
 def mark_attendance(request):
@@ -183,9 +208,9 @@ def mark_attendance(request):
     return render(request, 'face_attendance/mark_attendance.html', context)
 
 
-def index(request):
-    """Landing page view"""
-    return render(request, 'face_attendance/index.html')
+# def index(request):
+#     """Landing page view"""
+#     return render(request, 'face_attendance/index.html')
 
 def employee_list(request):
     """View for listing all employees"""
