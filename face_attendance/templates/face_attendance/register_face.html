@@ -62,10 +62,12 @@
                         <form id="employeeForm">
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label for="employee_id_new" class="form-label">
+                                    <label for="employee_id_display" class="form-label">
                                         <i class="fas fa-id-card me-1"></i> Mã Nhân Viên
                                     </label>
-                                    <input type="text" class="form-control" id="employee_id_new" name="employee_id_new" required>
+                                    <input type="text" class="form-control" id="employee_id_display" value="{{ next_employee_id }}" readonly>
+                                    <input type="hidden" id="employee_id_new" name="employee_id_new" value="{{ next_employee_id }}">
+                                    <small class="form-text text-muted">Mã nhân viên tự động sinh</small>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label for="department" class="form-label">
@@ -275,7 +277,7 @@
                                 <ul class="mb-0">
                                     <li>Để đăng ký nhân viên hiện có, chỉ cần chọn từ danh sách</li>
                                     <li>Để thêm nhân viên mới, chọn "Nhân Viên Mới" và điền tất cả thông tin</li>
-                                    <li>Mã nhân viên phải là duy nhất</li>
+                                    <li>Mã nhân viên được sinh tự động</li>
                                     <li>Địa chỉ email phải là duy nhất</li>
                                     <li>Tất cả các trường đánh dấu * là bắt buộc</li>
                                     <li>Ngày tuyển dụng nên theo định dạng YYYY-MM-DD</li>

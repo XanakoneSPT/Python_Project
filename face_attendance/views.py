@@ -54,97 +54,73 @@ def index(request):
 
 @login_required
 def mark_attendance(request):
-    """View for marking attendance with face recognition"""
+    """
+    View for marking attendance using facial recognition
+    """
+    # Get the current user (assuming authentication is set up)
+    employee = None
+    if request.user.is_authenticated:
+        try:
+            employee = Employee.objects.get(user=request.user)
+        except Employee.DoesNotExist:
+            pass
+
+    # Initialize context with current attendance status if employee exists
     context = {}
-    
-    # If user already has an attendance record for today, get it
-    if request.user.is_authenticated and hasattr(request.user, 'employee'):
+    if employee:
         today = timezone.now().date()
         try:
-            attendance = AttendanceRecord.objects.get(
-                employee=request.user.employee,
-                date=today
-            )
+            attendance = AttendanceRecord.objects.get(employee=employee, date=today)
             context['check_in_time'] = attendance.check_in_time
             context['check_out_time'] = attendance.check_out_time
         except AttendanceRecord.DoesNotExist:
-            pass
-    
-    if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            context['check_in_time'] = None
+            context['check_out_time'] = None
+
+    # Handle POST request (receiving the captured image)
+    if request.method == 'POST':
         try:
-            # Handle JSON data from request
-            if request.content_type == 'application/json':
-                data = json.loads(request.body)
-                image_data = data.get('image_data', '')
-            else:
-                # Handle form data (for backward compatibility)
-                image_data = request.POST.get('image_data', '')
-                if not image_data:
-                    body_unicode = request.body.decode('utf-8')
-                    if 'image_data=' in body_unicode:
-                        # Handle urlencoded data
-                        from urllib.parse import unquote
-                        image_data = unquote(body_unicode.split('image_data=')[1])
+            # Parse JSON data from the request
+            data = json.loads(request.body)
+            image_data = data.get('image_data', '')
             
-            if not image_data:
-                return JsonResponse({'success': False, 'message': 'No image data received'})
+            # Remove "data:image/jpeg;base64," from the beginning if present
+            if 'base64,' in image_data:
+                image_data = image_data.split('base64,')[1]
             
-            # Process the base64 image data
-            # Remove the data:image/jpeg;base64, prefix if it exists
-            if ',' in image_data:
-                image_data = image_data.split(',')[1]
-                
+            # Decode base64 image
             image_bytes = base64.b64decode(image_data)
-            
-            # Convert to numpy array for face_recognition
-            np_arr = np.frombuffer(image_bytes, np.uint8)
-            img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+            image_array = np.frombuffer(image_bytes, dtype=np.uint8)
+            frame = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
             
             # Convert BGR to RGB for face_recognition
-            rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             
-            # Detect faces in the image with improved parameters
-            # Try with both HOG (faster) and CNN (more accurate) models and different scales
-            face_locations = face_recognition.face_locations(rgb_img, model="hog")
-            
-            # If no face is detected with HOG, try again with CNN model which is more accurate but slower
-            if not face_locations:
-                try:
-                    face_locations = face_recognition.face_locations(rgb_img, model="cnn")
-                except:
-                    # If CNN model fails (possibly not installed with GPU support), try HOG with different parameters
-                    # Apply some preprocessing to enhance face detection
-                    # Resize image to improve detection of different sized faces
-                    small_frame = cv2.resize(rgb_img, (0, 0), fx=0.5, fy=0.5)
-                    face_locations = face_recognition.face_locations(small_frame)
-                    # Convert face locations back to original image size
-                    if face_locations:
-                        face_locations = [(top*2, right*2, bottom*2, left*2) for top, right, bottom, left in face_locations]
-            
-            # If still no face detected, try one more time with basic parameters but larger detection window
-            if not face_locations:
-                # Last attempt with adjusted brightness/contrast
-                img_enhanced = cv2.convertScaleAbs(rgb_img, alpha=1.2, beta=10)  # Increase brightness
-                face_locations = face_recognition.face_locations(img_enhanced)
+            # Find faces in the image
+            face_locations = face_recognition.face_locations(rgb_frame)
             
             if not face_locations:
-                return JsonResponse({'success': False, 'message': 'No face detected in the image. Please try again with better lighting and position your face clearly in the frame.'})
+                return JsonResponse({
+                    'success': False, 
+                    'message': 'No face detected. Please position yourself properly.'
+                })
             
             # Get face encodings
-            face_encodings = face_recognition.face_encodings(rgb_img, face_locations)
+            face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
             
             if not face_encodings:
-                return JsonResponse({'success': False, 'message': 'Could not encode the face. Please try again.'})
+                return JsonResponse({
+                    'success': False, 
+                    'message': 'Could not encode face. Please try again.'
+                })
             
-            # Get the first face encoding
+            # Get the first face encoding (assuming one person at a time)
             face_encoding = face_encodings[0]
             
             # Get all active employees with face encodings
-            from .models import FaceEncoding
             all_face_encodings = FaceEncoding.objects.filter(employee__is_active=True)
             
-            matched_employee = None
-            
+            # Match face with database
             for db_encoding in all_face_encodings:
                 # Get the stored encoding
                 stored_encoding = np.array(db_encoding.get_encoding())
@@ -153,58 +129,71 @@ def mark_attendance(request):
                 matches = face_recognition.compare_faces([stored_encoding], face_encoding, tolerance=0.6)
                 
                 if matches[0]:
+                    # Face match found
                     matched_employee = db_encoding.employee
-                    break
+                    today = timezone.now().date()
+                    now = timezone.now()
+                    
+                    # Check if attendance already exists for today
+                    attendance, created = AttendanceRecord.objects.get_or_create(
+                        employee=matched_employee,
+                        date=today,
+                        defaults={
+                            'check_in_time': now,
+                            'status': 'present',
+                            'verification_method': 'face'
+                        }
+                    )
+                    
+                    if created:
+                        # First check-in for the day
+                        response_data = {
+                            'success': True,
+                            'message': f'Đã điểm danh giờ vào thành công: {matched_employee.first_name} {matched_employee.last_name}',
+                            'check_in': True,
+                            'check_out': False,
+                            'check_in_time': attendance.check_in_time.strftime('%H:%M:%S')
+                        }
+                    else:
+                        # Already checked in, mark checkout
+                        if attendance.check_out_time is None:
+                            attendance.check_out_time = now
+                            attendance.calculate_hours()  # Assuming this method exists in your model
+                            attendance.save()
+                            response_data = {
+                                'success': True,
+                                'message': f'Đã điểm danh giờ ra thành công: {matched_employee.first_name} {matched_employee.last_name}',
+                                'check_in': False,
+                                'check_out': True,
+                                'check_out_time': attendance.check_out_time.strftime('%H:%M:%S')
+                            }
+                        else:
+                            # Already checked out
+                            response_data = {
+                                'success': False,
+                                'message': f'Bạn đã điểm danh đủ cả vào và ra hôm nay.',
+                                'check_in': True,
+                                'check_out': True
+                            }
+                    
+                    return JsonResponse(response_data)
             
-            if not matched_employee:
-                return JsonResponse({'success': False, 'message': 'No matching employee found. Please register your face first.'})
-            
-            # Mark attendance
-            today = timezone.now().date()
-            now = timezone.now()
-            
-            # Check if attendance already exists for today
-            attendance, created = AttendanceRecord.objects.get_or_create(
-                employee=matched_employee,
-                date=today,
-                defaults={
-                    'check_in_time': now,
-                    'status': 'present',
-                    'verification_method': 'face'
-                }
-            )
-            
-            if not created:
-                # If already checked in, mark checkout time
-                if attendance.check_out_time is None:
-                    attendance.check_out_time = now
-                    attendance.calculate_hours()
-                    attendance.save()
-                    return JsonResponse({
-                        'success': True, 
-                        'message': f'Check-out recorded for {matched_employee.first_name} {matched_employee.last_name}',
-                        'action': 'check_out',
-                        'time': now.strftime('%H:%M:%S')
-                    })
-                else:
-                    return JsonResponse({
-                        'success': False, 
-                        'message': f'{matched_employee.first_name} {matched_employee.last_name} already checked out today'
-                    })
-            else:
-                return JsonResponse({
-                    'success': True, 
-                    'message': f'Check-in recorded for {matched_employee.first_name} {matched_employee.last_name}',
-                    'action': 'check_in',
-                    'time': now.strftime('%H:%M:%S')
-                })
+            # If we get here, no matching face was found
+            return JsonResponse({
+                'success': False,
+                'message': 'Không tìm thấy khuôn mặt nào trùng khớp. Vui lòng thử lại.'
+            })
                 
         except Exception as e:
             import traceback
-            print(f"Error in mark_attendance: {str(e)}")
+            print(f"Error in mark_attendance: {e}")
             print(traceback.format_exc())
-            return JsonResponse({'success': False, 'message': f'Error: {str(e)}'})
+            return JsonResponse({
+                'success': False,
+                'message': f'Đã xảy ra lỗi: {str(e)}'
+            })
     
+    # For GET request, just render the template
     return render(request, 'face_attendance/mark_attendance.html', context)
 
 
@@ -322,7 +311,14 @@ def employee_list(request):
 def register_face(request):
     """View for registering employee faces"""
     employees = Employee.objects.all()
-    context = {'employees': employees}  # Fixed context variable name
+    
+    # Generate next employee ID for new employee form
+    next_employee_id = generate_employee_id()
+    
+    context = {
+        'employees': employees,
+        'next_employee_id': next_employee_id  # Add this to the context
+    }
 
     if request.method == 'POST':
         is_new_employee = request.POST.get('is_new_employee') == 'true'
@@ -460,6 +456,43 @@ def register_face(request):
             messages.error(request, f"Error: {str(e)}")
     
     return render(request, 'face_attendance/register_face.html', context)
+
+def generate_employee_id():
+    """
+    Generate a unique employee ID in the format 'EMP001', 'EMP002', etc.
+    Checks existing IDs and increments the highest number found.
+    """
+    from django.db.models import Max
+    from django.db.models.functions import Substr, Cast
+    from django.db.models import IntegerField
+    
+    # Get the latest employee object with the highest ID
+    latest_employee = Employee.objects.filter(
+        employee_id__startswith='EMP'
+    ).annotate(
+        # Extract the numeric part (e.g., '001' from 'EMP001')
+        id_num=Cast(
+            Substr('employee_id', 4, length=3),  # Position 4 (1-indexed), length 3
+            IntegerField()
+        )
+    ).order_by('-id_num').first()
+    
+    # If no employees exist or no employee with EMP prefix, start with EMP001
+    if not latest_employee or not latest_employee.employee_id.startswith('EMP'):
+        return 'EMP001'
+    
+    # Extract the number part and increment
+    try:
+        id_number = int(latest_employee.employee_id[3:])
+        next_id_number = id_number + 1
+    except (ValueError, IndexError):
+        # If we can't parse the number for some reason, start with 1
+        next_id_number = 1
+    
+    # Format the new ID with leading zeros (EMP001, EMP002, etc.)
+    new_id = f'EMP{next_id_number:03d}'
+    
+    return new_id
 
 def register_success(request):
     return render(request, 'face_attendance/register_success.html')
