@@ -166,6 +166,7 @@
                             
                             <form id="cameraForm" method="post" enctype="multipart/form-data">
                                 {% csrf_token %}
+                                <input type="hidden" id="selected_employee_id" name="employee_id" value="">
                                 <canvas id="canvas" width="640" height="480" style="display: none;"></canvas>
                                 <input type="hidden" id="image_data" name="image_data">
                                 <input type="hidden" name="capture_method" value="camera">
@@ -188,6 +189,7 @@
                         <div class="tab-pane fade" id="upload" role="tabpanel" aria-labelledby="upload-tab">
                             <form id="uploadForm" method="post" enctype="multipart/form-data">
                                 {% csrf_token %}
+                                <input type="hidden" id="selected_employee_id" name="employee_id" value="">
                                 <input type="hidden" name="capture_method" value="upload">
                                 <input type="hidden" id="is_new_employee_upload" name="is_new_employee" value="false">
                                 <input type="hidden" id="employee_form_data_upload" name="employee_form_data" value="">
@@ -306,6 +308,9 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="{% static 'js/register_face.js' %}"></script>
 <script>
+    document.getElementById('employee_id').addEventListener('change', function() {
+    document.getElementById('selected_employee_id').value = this.value;
+});
     document.addEventListener('DOMContentLoaded', function() {
         // Camera capture functionality
         const video = document.getElementById('video');
@@ -410,13 +415,19 @@
             if (newEmployeeRadio.checked) {
                 const formData = getFormData();
                 employeeFormData.value = JSON.stringify(formData);
+            } else {
+                // Make sure the selected employee ID is included
+                document.getElementById('selected_employee_id').value = document.getElementById('employee_id').value;
             }
         });
         
         uploadForm.addEventListener('submit', function(e) {
             if (newEmployeeRadio.checked) {
                 const formData = getFormData();
-                employeeFormDataUpload.value = JSON.stringify(formData);
+                employeeFormData.value = JSON.stringify(formData);
+            } else {
+                // Make sure the selected employee ID is included
+                document.getElementById('selected_employee_id').value = document.getElementById('employee_id').value;
             }
         });
         
